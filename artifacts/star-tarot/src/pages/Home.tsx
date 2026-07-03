@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect, ReactNode, Component } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, Coins } from "lucide-react";
-import { BirthdayWheels, SimpleBirthdayWheels, BirthdayValue } from "@/components/BirthdayWheels";
+import { Lock } from "lucide-react";
+import type { BirthdayValue } from "@/components/BirthdayWheels";
 import { TopupModal } from "@/components/TopupModal";
 import { usePoints } from "@/contexts/PointsContext";
 import { useNickname } from "@/contexts/NicknameContext";
@@ -302,8 +302,7 @@ export default function Home() {
   // Input
   const [nicknameInput, setNicknameInput] = useState("");
   const [birthday, setBirthday] = useState<BirthdayValue>({ year: 1990, month: 1, day: 1, hour: 12, minute: 0 });
-  const [isKeyboardMode, setIsKeyboardMode] = useState(false);
-  const [kbInput, setKbInput] = useState({ year: "1990", month: "01", day: "01", hour: "12", minute: "00" });
+  const [unknownTime, setUnknownTime] = useState(false);
 
   // App state
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -313,8 +312,9 @@ export default function Home() {
   const [confirmModal, setConfirmModal] = useState<ConfirmState | null>(null);
   const [showTopup, setShowTopup] = useState(false);
   const [compatibilityResult, setCompatibilityResult] = useState<ReturnType<typeof getCompatibility> | null>(null);
-  const [partnerBirthday, setPartnerBirthday] = useState({ year: 1990, month: 6, day: 15 });
-  const [tarotDrawn, setTarotDrawn] = useState<number | null>(null);
+  const [partnerBirthday, setPartnerBirthday] = useState({ month: 6, day: 15 });
+  const [partnerUnknownTime, setPartnerUnknownTime] = useState(false);
+  const [tarotQuestion, setTarotQuestion] = useState("🌟 今日整體運勢與靈魂指引");
 
   // Scroll anchor just below unlock button
   const contentRef = useRef<HTMLDivElement>(null);
@@ -345,16 +345,6 @@ export default function Home() {
   // ── Handlers ─────────────────────────────────────────────────────
   const handleUnlock = (e: React.MouseEvent) => {
     e.preventDefault();
-    let bd = birthday;
-    if (isKeyboardMode) {
-      const y   = Math.max(1900, Math.min(2099, parseInt(kbInput.year)  || 1990));
-      const m   = Math.max(1, Math.min(12, parseInt(kbInput.month) || 1));
-      const d   = Math.max(1, Math.min(31, parseInt(kbInput.day)   || 1));
-      const h   = Math.max(0, Math.min(23, parseInt(kbInput.hour)  || 12));
-      const min = Math.max(0, Math.min(59, parseInt(kbInput.minute)|| 0));
-      bd = { year: y, month: m, day: d, hour: h, minute: min };
-      setBirthday(bd);
-    }
     setNickname(nicknameInput);
     setIsUnlocked(true);
     setTimeout(() => contentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
@@ -397,27 +387,22 @@ export default function Home() {
   const mercury        = getMercuryRetrogradeStatus();
   const destinyReport  = getBirthdayDestinyReport(birthday.year, birthday.month, birthday.day, birthday.hour, birthday.minute);
 
-  // Tarot card selection (seeded by birth data, overridden by draw)
-  const tarotSeedIdx = ((birthday.month * 7 + birthday.day * 3 + birthday.hour) % MAJOR_ARCANA.length);
-  const tarotIdx     = tarotDrawn ?? tarotSeedIdx;
-  const drawnCard    = MAJOR_ARCANA[tarotIdx];
+  // 3-card tarot spread seeded by birthday (past / present / future)
+  const tarotSeed  = (birthday.year % 100) * 13 + birthday.month * 7 + birthday.day * 3;
+  const tarotCard1 = MAJOR_ARCANA[tarotSeed % 22];
+  const tarotCard2 = MAJOR_ARCANA[(tarotSeed + 7) % 22];
+  const tarotCard3 = MAJOR_ARCANA[(tarotSeed + 14) % 22];
 
   /* ═══════════════════ RENDER ════════════════════════════════════ */
   return (
     <ErrorBoundary>
       <div style={{ minHeight: "100dvh", background: "#0D0D0D", color: "#FFF", fontFamily: "'Noto Serif SC',serif", paddingBottom: isUnlocked ? 84 : 32, userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}>
 
-        {/* ── Top bar ─────────────────────────────────────────────── */}
-        <div style={{ position: "fixed", top: 12, right: 12, zIndex: 200, display: "flex", gap: 8, alignItems: "center" }}>
-          <button onClick={e => { e.preventDefault(); setShowTopup(true); }}
-            style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 10px", background: "rgba(0,0,0,0.7)", backdropFilter: "blur(10px)", border: "1px solid rgba(212,175,55,0.35)", borderRadius: 100, color: "rgba(212,175,55,0.7)", fontSize: 11, cursor: "pointer" }}>
-            兌換碼
-          </button>
-          <button
-            onClick={e => { e.preventDefault(); window.open("https://pay.startarot.com", "_blank", "noopener"); }}
-            data-testid="btn-topup"
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", background: "rgba(0,0,0,0.7)", backdropFilter: "blur(10px)", border: "1px solid rgba(212,175,55,0.5)", borderRadius: 100, color: "#D4AF37", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-            <Coins size={14} /> {points} 點
+        {/* ── Top bar — single gold capsule ───────────────────────── */}
+        <div style={{ position: "fixed", top: 12, right: 12, zIndex: 200 }}>
+          <button onClick={e => { e.preventDefault(); setShowTopup(true); }} data-testid="btn-topup"
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", background: "rgba(0,0,0,0.8)", backdropFilter: "blur(12px)", border: "1px solid rgba(212,175,55,0.55)", borderRadius: 100, color: "#D4AF37", fontSize: 14, fontWeight: 700, cursor: "pointer", boxShadow: "0 0 12px rgba(212,175,55,0.2)", letterSpacing: "0.03em" }}>
+            🪙 {points} 點
           </button>
         </div>
 
@@ -437,36 +422,59 @@ export default function Home() {
               style={{ width: "100%", boxSizing: "border-box", padding: "12px 16px", background: "rgba(0,0,0,0.5)", border: "1px solid rgba(212,175,55,0.4)", borderRadius: 10, color: "#D4AF37", fontSize: 16, fontFamily: "inherit", outline: "none", marginBottom: 14, caretColor: "#D4AF37", userSelect: "text", WebkitUserSelect: "text" }}
             />
 
-            {/* Mode toggle */}
-            <button onClick={e => { e.preventDefault(); setIsKeyboardMode(prev => !prev); }}
-              style={{ marginBottom: 14, padding: "7px 16px", background: "rgba(212,175,55,0.07)", border: "1px solid rgba(212,175,55,0.3)", borderRadius: 100, color: "#C9A84C", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
-              {isKeyboardMode ? "🎡 切換星盤滾輪選擇" : "⌨️ 切換鍵盤手動輸入"}
-            </button>
-
-            {/* Wheel or keyboard picker */}
-            {isKeyboardMode ? (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 6, marginBottom: 4 }}>
-                {([
-                  { label: "年", key: "year", ph: "YYYY", max: 4 },
-                  { label: "月", key: "month", ph: "MM", max: 2 },
-                  { label: "日", key: "day", ph: "DD", max: 2 },
-                  { label: "時", key: "hour", ph: "HH", max: 2 },
-                  { label: "分", key: "minute", ph: "mm", max: 2 },
-                ] as const).map(({ label, key, ph, max }) => (
-                  <div key={key} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                    <span style={{ fontSize: 12, color: "#C9A84C", fontWeight: 600 }}>{label}</span>
-                    <input type="text" inputMode="numeric" pattern="[0-9]*"
-                      value={kbInput[key]}
-                      onChange={e => { const v = e.target.value.replace(/\D/g,"").slice(0,max); setKbInput(prev=>({...prev,[key]:v})); }}
-                      placeholder={ph}
-                      style={{ width: "100%", boxSizing: "border-box", padding: "10px 2px", textAlign: "center", background: "rgba(0,0,0,0.5)", border: "1px solid rgba(212,175,55,0.4)", borderRadius: 8, color: "#D4AF37", fontSize: 14, fontFamily: "monospace", outline: "none", caretColor: "#D4AF37", userSelect: "text", WebkitUserSelect: "text" }}
-                    />
+            {/* Birthday select dropdowns */}
+            {(() => {
+              const selSt: React.CSSProperties = { width: "100%", padding: "10px 8px", background: "rgba(0,0,0,0.6)", border: "1px solid rgba(212,175,55,0.45)", borderRadius: 8, color: "#D4AF37", fontSize: 14, fontFamily: "'Noto Serif SC',serif", outline: "none", cursor: "pointer", userSelect: "text", WebkitUserSelect: "text" };
+              const lbSt: React.CSSProperties = { fontSize: 12, color: "#C9A84C", fontWeight: 600, marginBottom: 4, textAlign: "center" };
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {/* Row 1: Year, Month, Day */}
+                  <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 8 }}>
+                    <div><div style={lbSt}>西元年</div>
+                      <select value={birthday.year} onChange={e => setBirthday(p => ({...p, year: +e.target.value}))} style={selSt} data-testid="sel-year">
+                        {Array.from({length: 77}, (_, i) => 2026 - i).map(y => <option key={y} value={y}>{y}</option>)}
+                      </select>
+                    </div>
+                    <div><div style={lbSt}>月</div>
+                      <select value={birthday.month} onChange={e => setBirthday(p => ({...p, month: +e.target.value}))} style={selSt} data-testid="sel-month">
+                        {Array.from({length: 12}, (_, i) => i + 1).map(m => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    </div>
+                    <div><div style={lbSt}>日</div>
+                      <select value={birthday.day} onChange={e => setBirthday(p => ({...p, day: +e.target.value}))} style={selSt} data-testid="sel-day">
+                        {Array.from({length: 31}, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                    </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <BirthdayWheels value={birthday} onChange={setBirthday} testIdPrefix="main" onTimeInteract={handleTimeInteract} />
-            )}
+                  {/* Unknown time checkbox */}
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none", WebkitUserSelect: "none", justifyContent: "center" }}>
+                    <input type="checkbox" checked={unknownTime} onChange={e => {
+                      setUnknownTime(e.target.checked);
+                      if (e.target.checked) setBirthday(p => ({...p, hour: 12, minute: 0}));
+                    }} style={{ accentColor: "#D4AF37", width: 16, height: 16 }} />
+                    <span style={{ fontSize: 13, color: "#C9A84C" }}>🙋 不確定 / 忘記具體出生時間</span>
+                  </label>
+                  {/* Row 2: Hour, Minute */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, opacity: unknownTime ? 0.4 : 1, transition: "opacity 0.2s" }}>
+                    <div><div style={lbSt}>時（00–23）</div>
+                      <select value={birthday.hour} disabled={unknownTime} onChange={e => setBirthday(p => ({...p, hour: +e.target.value}))} style={selSt} data-testid="sel-hour">
+                        {Array.from({length: 24}, (_, i) => i).map(h => <option key={h} value={h}>{String(h).padStart(2,"0")}</option>)}
+                      </select>
+                    </div>
+                    <div><div style={lbSt}>分（00–59）</div>
+                      <select value={birthday.minute} disabled={unknownTime} onChange={e => setBirthday(p => ({...p, minute: +e.target.value}))} style={selSt} data-testid="sel-minute">
+                        {Array.from({length: 60}, (_, i) => i).map(m => <option key={m} value={m}>{String(m).padStart(2,"0")}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  {unknownTime && (
+                    <div style={{ background: "rgba(212,175,55,0.07)", border: "1px solid rgba(212,175,55,0.25)", borderRadius: 10, padding: "12px 14px", textAlign: "left" }}>
+                      <p style={{ fontSize: 18, color: "#FFF", lineHeight: 1.8, margin: 0 }}>💡 <span style={{ color: "#D4AF37", fontWeight: 700 }}>星穹提示：</span>忘記精確出生時間沒關係。系統將自動以當日中午 12:00 進行基礎推演，部分月亮星座及上升星座結果可能略有偏差，其餘靈魂天機報告不受影響。</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             <button onClick={handleUnlock} data-testid="btn-unlock-main"
               style={{ marginTop: 18, width: "100%", padding: "14px 0", background: "linear-gradient(90deg,#B38728,#FBF5B7)", color: "#000", fontWeight: 700, fontSize: 17, border: "none", borderRadius: 100, cursor: "pointer", boxShadow: "0 0 22px rgba(212,175,55,0.5)", letterSpacing: "0.05em" }}>
@@ -535,6 +543,16 @@ export default function Home() {
                       <span style={{ fontSize: 11, color: "#4AFF8C", border: "1px solid rgba(74,255,140,0.35)", padding: "2px 8px", borderRadius: 100 }}>星座免費</span>
                       <span style={{ fontSize: 11, color: "rgba(212,175,55,0.5)", background: "rgba(212,175,55,0.08)", padding: "2px 8px", borderRadius: 100, border: "1px solid rgba(212,175,55,0.2)" }}>五星全解 6 點</span>
                     </div>
+                    {/* ── Unlock button at TOP ── */}
+                    {!unlockedModules.allFivePlanets && (
+                      <button onClick={e => { e.preventDefault(); requestUnlock("allFivePlanets", "萬象五星一鍵全解鎖"); }} data-testid="btn-unlock-allFivePlanets"
+                        style={{ width: "100%", marginBottom: 14, padding: "14px 0", background: "linear-gradient(90deg,#B38728,#FBF5B7)", color: "#000", fontWeight: 700, fontSize: 15, border: "none", borderRadius: 100, cursor: "pointer", boxShadow: "0 0 14px rgba(212,175,55,0.35)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                        <Lock size={15} /> 一鍵解鎖五星深層盲區全析（{starTarotPricing.allFivePlanets} 點）
+                      </button>
+                    )}
+                    {!!unlockedModules.allFivePlanets && (
+                      <div style={{ marginBottom: 12, textAlign: "center", fontSize: 12, color: "rgba(74,255,140,0.7)", border: "1px solid rgba(74,255,140,0.25)", borderRadius: 100, padding: "4px 0" }}>✦ 五星深析已全解鎖 ✦</div>
+                    )}
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       {planets.map((p) => (
                         <div key={p.planet} style={{ background: "#0a0a0a", border: "1px solid rgba(212,175,55,0.22)", borderRadius: 14, overflow: "hidden" }}>
@@ -560,15 +578,6 @@ export default function Home() {
                         </div>
                       ))}
                     </div>
-                    {!unlockedModules.allFivePlanets && (
-                      <button onClick={e => { e.preventDefault(); requestUnlock("allFivePlanets", "萬象五星一鍵全解鎖"); }} data-testid="btn-unlock-allFivePlanets"
-                        style={{ width: "100%", marginTop: 14, padding: "14px 0", background: "linear-gradient(90deg,#B38728,#FBF5B7)", color: "#000", fontWeight: 700, fontSize: 15, border: "none", borderRadius: 100, cursor: "pointer", boxShadow: "0 0 14px rgba(212,175,55,0.35)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                        <Lock size={15} /> 一鍵解鎖五星深層盲區全析（{starTarotPricing.allFivePlanets} 點）
-                      </button>
-                    )}
-                    {!!unlockedModules.allFivePlanets && (
-                      <div style={{ marginTop: 10, textAlign: "center", fontSize: 12, color: "rgba(74,255,140,0.7)", border: "1px solid rgba(74,255,140,0.25)", borderRadius: 100, padding: "4px 0" }}>✦ 五星深析已全解鎖 ✦</div>
-                    )}
                   </div>
 
                 </div>
@@ -577,92 +586,96 @@ export default function Home() {
               {/* ════ TAB 2: 量子塔羅 ════ */}
               {activeTab === "tarot" && (
                 <div>
-                  {/* Rules banner — always visible at top */}
+                  {/* Rules banner */}
                   <div style={{ background: "rgba(212,175,55,0.07)", border: "1px solid rgba(212,175,55,0.35)", borderRadius: 14, padding: "16px 18px", marginBottom: 16 }}>
                     <p style={{ fontSize: 15, color: "#D4AF37", lineHeight: 1.85, margin: 0, textShadow: "0 0 10px rgba(212,175,55,0.35)", fontWeight: 600 }}>
-                      🔮 量子塔羅占卜規則：請先在心中默想您今日最想祈求的指引或問題，隨後在下方隨機排列的牌陣中，憑第一直覺點選感應卡牌，即可消耗 6 點解鎖今日之命運翻牌啟示。
+                      🔮 量子塔羅規則：在心中凝聚您最想祈求的指引，從下方選擇問題類型，宇宙將透過您的生命密碼，為您抽出「過去・現在・未來」三張命運之牌。消耗 {starTarotPricing.tarotDivination} 點即可翻牌解碼，每份報告 100+ 字深度啟示。
                     </p>
                   </div>
 
                   <SectionCard>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                      <GoldTitle size={22}>大阿爾克那牌陣</GoldTitle>
+                      <GoldTitle size={20}>三牌命運牌陣</GoldTitle>
                       <span style={{ fontSize: 12, color: "rgba(212,175,55,0.4)" }}>{starTarotPricing.tarotDivination} 點</span>
                     </div>
-                    <BodyText style={{ marginBottom: 18 }}>
-                      宇宙為 <span style={{ color: "#D4AF37", fontWeight: 700 }}>{nick}</span> 佈下的二十二張大阿爾克那牌正在等待——每一張牌都是靈魂高我給予的量子天機。
-                    </BodyText>
+
+                    {/* Question dropdown */}
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ fontSize: 13, color: "#C9A84C", fontWeight: 600, marginBottom: 6 }}>🙏 今日祈問方向</div>
+                      <select value={tarotQuestion} onChange={e => setTarotQuestion(e.target.value)}
+                        style={{ width: "100%", padding: "11px 12px", background: "rgba(0,0,0,0.6)", border: "1px solid rgba(212,175,55,0.45)", borderRadius: 10, color: "#D4AF37", fontSize: 14, fontFamily: "'Noto Serif SC',serif", outline: "none", cursor: "pointer", userSelect: "text", WebkitUserSelect: "text" }}>
+                        {["🌟 今日整體運勢與靈魂指引","💰 財富豐盛與事業突破方向","❤️ 感情關係與心靈連結指引","🎯 當前最重要的人生決策指引","🌿 身心靈健康與能量修復指引","✨ 近期隱藏機遇與貴人磁場"].map(q => (
+                          <option key={q} value={q}>{q}</option>
+                        ))}
+                      </select>
+                      <div style={{ marginTop: 8, padding: "8px 12px", background: "rgba(212,175,55,0.05)", borderRadius: 8, border: "1px solid rgba(212,175,55,0.15)" }}>
+                        <p style={{ fontSize: 13, color: "rgba(212,175,55,0.8)", lineHeight: 1.7, margin: 0 }}>
+                          已選：<span style={{ fontWeight: 700 }}>{tarotQuestion}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* 3-card face-down preview or revealed */}
                     {!unlockedModules.tarotDivination ? (
                       <div>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, marginBottom: 18 }}>
-                          {Array.from({length: 8}, (_, i) => (
-                            <div key={i} style={{ aspectRatio: "2/3", background: "rgba(212,175,55,0.06)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, color: "rgba(212,175,55,0.4)" }}>✦</div>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 18 }}>
+                          {[{label:"過去",icon:"⏮"},{label:"現在",icon:"⊙"},{label:"未來",icon:"⏭"}].map(({label, icon}) => (
+                            <div key={label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                              <div style={{ width: "100%", aspectRatio: "2/3", background: "linear-gradient(160deg,rgba(212,175,55,0.12) 0%,rgba(0,0,0,0.5) 100%)", border: "1px solid rgba(212,175,55,0.3)", borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                                <span style={{ fontSize: 28, opacity: 0.5 }}>✦</span>
+                                <span style={{ fontSize: 11, color: "rgba(212,175,55,0.5)" }}>未翻開</span>
+                              </div>
+                              <span style={{ fontSize: 13, color: "#C9A84C", fontWeight: 600 }}>{icon} {label}</span>
+                            </div>
                           ))}
                         </div>
-                        <button onClick={e => { e.preventDefault(); requestUnlock("tarotDivination", "量子大阿爾克那牌陣"); }} data-testid="btn-unlock-tarotDivination"
-                          style={{ width: "100%", padding: "13px 0", background: "linear-gradient(90deg,#B38728,#FBF5B7)", color: "#000", fontWeight: 700, fontSize: 15, border: "none", borderRadius: 100, cursor: "pointer", boxShadow: "0 0 14px rgba(212,175,55,0.35)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                          <Lock size={15} /> 翻開今日牌陣 ({starTarotPricing.tarotDivination} 點)
+                        <button onClick={e => { e.preventDefault(); requestUnlock("tarotDivination", "三牌命運牌陣"); }} data-testid="btn-unlock-tarotDivination"
+                          style={{ width: "100%", padding: "14px 0", background: "linear-gradient(90deg,#B38728,#FBF5B7)", color: "#000", fontWeight: 700, fontSize: 15, border: "none", borderRadius: 100, cursor: "pointer", boxShadow: "0 0 14px rgba(212,175,55,0.35)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                          <Lock size={15} /> 翻開命運三牌（{starTarotPricing.tarotDivination} 點）
                         </button>
                       </div>
                     ) : (
                       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-                        {/* Card grid */}
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, marginBottom: 20 }}>
-                          {MAJOR_ARCANA.slice(0, 8).map((card, i) => {
-                            const sel = i === tarotIdx || card.id === tarotIdx;
-                            return (
-                              <div key={card.id} onClick={e => { e.preventDefault(); setTarotDrawn(card.id); }}
-                                style={{ aspectRatio: "2/3", background: sel ? "rgba(212,175,55,0.18)" : "rgba(212,175,55,0.06)", border: `1px solid ${sel ? "#D4AF37" : "rgba(212,175,55,0.2)"}`, borderRadius: 10, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, cursor: "pointer", boxShadow: sel ? "0 0 14px rgba(212,175,55,0.5)" : "none", transition: "all 0.2s", padding: "6px 2px" }}>
-                                <span style={{ fontSize: 22 }}>{card.emoji}</span>
-                                <span style={{ fontSize: 9, color: sel ? "#D4AF37" : "rgba(255,255,255,0.4)", textAlign: "center", lineHeight: 1.2 }}>{card.name}</span>
+                        {/* 3 revealed cards */}
+                        {[
+                          { card: tarotCard1, role: "過去", icon: "⏮", roleColor: "#B8D4FF", bg: "rgba(184,212,255,0.04)", border: "rgba(184,212,255,0.2)" },
+                          { card: tarotCard2, role: "現在", icon: "⊙", roleColor: "#FFD666", bg: "rgba(255,214,102,0.05)", border: "rgba(255,214,102,0.25)" },
+                          { card: tarotCard3, role: "未來", icon: "⏭", roleColor: "#C4A3FF", bg: "rgba(196,163,255,0.04)", border: "rgba(196,163,255,0.2)" },
+                        ].map(({ card, role, icon, roleColor, bg, border }) => (
+                          <div key={role} style={{ marginBottom: 18, background: bg, border: `1px solid ${border}`, borderRadius: 14, padding: "18px 16px" }}>
+                            {/* Role label */}
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                              <span style={{ fontSize: 16 }}>{icon}</span>
+                              <span style={{ fontSize: 14, fontWeight: 700, color: roleColor, letterSpacing: "0.06em" }}>{role}</span>
+                              <span style={{ flex: 1, height: 1, background: `${border}` }}/>
+                            </div>
+                            {/* Card header */}
+                            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                              <span style={{ fontSize: 32, filter: "drop-shadow(0 0 8px rgba(212,175,55,0.6))" }}>{card.emoji}</span>
+                              <div>
+                                <div style={{ fontSize: 10, color: "rgba(212,175,55,0.55)", letterSpacing: "0.1em", marginBottom: 2 }}>{card.enName}</div>
+                                <div style={{ fontSize: 20, fontWeight: 700, color: "#D4AF37", textShadow: "0 0 10px rgba(212,175,55,0.5)" }}>{card.name}</div>
                               </div>
-                            );
-                          })}
-                        </div>
-
-                        {/* Full reading */}
-                        <div style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(212,175,55,0.28)", borderRadius: 14, padding: "20px 16px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                            <span style={{ fontSize: 28 }}>{drawnCard.emoji}</span>
-                            <div>
-                              <div style={{ fontSize: 11, color: "rgba(212,175,55,0.6)", letterSpacing: "0.08em" }}>{drawnCard.enName}</div>
-                              <div style={{ fontSize: 20, fontWeight: 700, color: "#D4AF37", textShadow: "0 0 10px rgba(212,175,55,0.5)" }}>{drawnCard.name}</div>
+                            </div>
+                            {/* Essence */}
+                            <div style={{ marginBottom: 12 }}>
+                              <div style={{ fontSize: 12, color: "#FFD666", fontWeight: 700, marginBottom: 6, display: "flex", alignItems: "center", gap: 5 }}><span>✦</span> 牌面本質</div>
+                              <BodyText style={{ fontSize: 16 }}>{renderNick(card.essence, nick)}</BodyText>
+                            </div>
+                            {/* Blindspot */}
+                            <div style={{ marginBottom: 12, background: "rgba(255,107,74,0.05)", border: "1px solid rgba(255,107,74,0.15)", borderRadius: 10, padding: "12px 14px" }}>
+                              <div style={{ fontSize: 12, color: "#FF9F7A", fontWeight: 700, marginBottom: 6, display: "flex", alignItems: "center", gap: 5 }}><span>⚠</span> 心理盲區</div>
+                              <BodyText style={{ fontSize: 16 }}>{renderNick(card.blindspot, nick)}</BodyText>
+                            </div>
+                            {/* Breakthrough */}
+                            <div style={{ background: "rgba(74,255,140,0.05)", border: "1px solid rgba(74,255,140,0.15)", borderRadius: 10, padding: "12px 14px" }}>
+                              <div style={{ fontSize: 12, color: "#4AFF8C", fontWeight: 700, marginBottom: 6, display: "flex", alignItems: "center", gap: 5 }}><span>⚡</span> 宇宙破局建議</div>
+                              <BodyText style={{ fontSize: 16 }}>{renderNick(card.breakthrough, nick)}</BodyText>
                             </div>
                           </div>
-                          <div style={{ marginBottom: 14 }}>
-                            <div style={{ fontSize: 13, color: "#FFD666", fontWeight: 700, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                              <span>✦</span> 牌面本質
-                            </div>
-                            <BodyText style={{ fontSize: 16 }}>{renderNick(drawnCard.essence, nick)}</BodyText>
-                          </div>
-                          <div style={{ marginBottom: 14, background: "rgba(255,107,74,0.05)", border: "1px solid rgba(255,107,74,0.15)", borderRadius: 10, padding: "12px 14px" }}>
-                            <div style={{ fontSize: 13, color: "#FF9F7A", fontWeight: 700, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                              <span>⚠</span> 心理盲區
-                            </div>
-                            <BodyText style={{ fontSize: 16 }}>{renderNick(drawnCard.blindspot, nick)}</BodyText>
-                          </div>
-                          <div style={{ background: "rgba(74,255,140,0.05)", border: "1px solid rgba(74,255,140,0.15)", borderRadius: 10, padding: "12px 14px" }}>
-                            <div style={{ fontSize: 13, color: "#4AFF8C", fontWeight: 700, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                              <span>⚡</span> 宇宙破局建議
-                            </div>
-                            <BodyText style={{ fontSize: 16 }}>{renderNick(drawnCard.breakthrough, nick)}</BodyText>
-                          </div>
-                        </div>
+                        ))}
                       </motion.div>
                     )}
-                  </SectionCard>
-
-                  {/* Tarot guidance */}
-                  <SectionCard>
-                    <GoldTitle size={18}>塔羅行動指引</GoldTitle>
-                    <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10 }}>
-                      {["今日能量顏色：金色與深紫，穿戴這兩色將放大你的磁場引力。", "最佳行動時段：上午 10–12 時，宇宙能量在此時段達到年度峰值。", "今日冥想關鍵詞：放下、接收、顯化。靜心五分鐘後再做重要決定，精準度倍增。"].map((t, i) => (
-                        <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                          <span style={{ color: "#D4AF37", flexShrink: 0, marginTop: 4 }}>✦</span>
-                          <BodyText style={{ fontSize: 16 }}>{t}</BodyText>
-                        </div>
-                      ))}
-                    </div>
                   </SectionCard>
                 </div>
               )}
@@ -868,8 +881,37 @@ export default function Home() {
                   <SectionCard>
                     <div style={{ marginBottom: 14 }}><GoldTitle size={20}>量子共鳴 · 雙人靈魂比對</GoldTitle></div>
                     <BodyText style={{ marginBottom: 14 }}>輸入對方生辰，進行高維度靈魂頻率比對（分數及共鳴指數免費，350+ 字深度報告 10 點）</BodyText>
+                    {/* Partner birthday — select dropdowns + unknown time */}
                     <div style={{ margin: "14px 0" }}>
-                      <SimpleBirthdayWheels value={partnerBirthday} onChange={setPartnerBirthday} testIdPrefix="partner" />
+                      {(() => {
+                        const selSt: React.CSSProperties = { width: "100%", padding: "10px 8px", background: "rgba(0,0,0,0.6)", border: "1px solid rgba(212,175,55,0.4)", borderRadius: 8, color: "#D4AF37", fontSize: 14, fontFamily: "'Noto Serif SC',serif", outline: "none", cursor: "pointer", userSelect: "text", WebkitUserSelect: "text" };
+                        const lbSt: React.CSSProperties = { fontSize: 11, color: "#C9A84C", fontWeight: 600, marginBottom: 4, textAlign: "center" };
+                        return (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                              <div><div style={lbSt}>對方月份</div>
+                                <select value={partnerBirthday.month} onChange={e => setPartnerBirthday(p => ({...p, month: +e.target.value}))} style={selSt} data-testid="sel-partner-month">
+                                  {Array.from({length: 12}, (_, i) => i + 1).map(m => <option key={m} value={m}>{m} 月</option>)}
+                                </select>
+                              </div>
+                              <div><div style={lbSt}>對方日期</div>
+                                <select value={partnerBirthday.day} onChange={e => setPartnerBirthday(p => ({...p, day: +e.target.value}))} style={selSt} data-testid="sel-partner-day">
+                                  {Array.from({length: 31}, (_, i) => i + 1).map(d => <option key={d} value={d}>{d} 日</option>)}
+                                </select>
+                              </div>
+                            </div>
+                            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none", WebkitUserSelect: "none", justifyContent: "center" }}>
+                              <input type="checkbox" checked={partnerUnknownTime} onChange={e => setPartnerUnknownTime(e.target.checked)} style={{ accentColor: "#D4AF37", width: 15, height: 15 }} />
+                              <span style={{ fontSize: 12, color: "#C9A84C" }}>🙋 對方出生日期不確定</span>
+                            </label>
+                            {partnerUnknownTime && (
+                              <div style={{ background: "rgba(212,175,55,0.06)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: 10, padding: "10px 12px" }}>
+                                <p style={{ fontSize: 18, color: "#FFF", lineHeight: 1.8, margin: 0 }}>💡 <span style={{ color: "#D4AF37", fontWeight: 700 }}>提示：</span>僅輸入月份即可完成基礎共鳴比對。完整出生日期可讓靈魂頻率計算更精確，如已知請填入。</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                     <button onClick={e => { e.preventDefault(); setCompatibilityResult(getCompatibility(birthday.month, birthday.day, partnerBirthday.month, partnerBirthday.day)); }} data-testid="btn-compare"
                       style={{ width: "100%", padding: "12px 0", background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.45)", borderRadius: 100, color: "#D4AF37", fontWeight: 700, fontSize: 15, cursor: "pointer", marginBottom: 14 }}>
