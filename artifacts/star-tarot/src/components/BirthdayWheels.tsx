@@ -16,7 +16,7 @@ interface WheelProps {
 
 function SingleWheel({ items, selected, onChange, label, testId, fmt, onInteract }: WheelProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const programmingRef = useRef(false);
 
   const display = fmt ?? ((n: number) => String(n));

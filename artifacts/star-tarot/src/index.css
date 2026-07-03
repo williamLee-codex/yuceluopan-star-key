@@ -265,3 +265,20 @@
     inset: -1px;
   }
 }
+
+/* ── 全站防複製鎖死 ────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+/* 允許輸入框正常輸入 */
+input,
+textarea,
+[contenteditable="true"] {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -webkit-touch-callout: default !important;
+}
