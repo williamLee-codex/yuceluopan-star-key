@@ -317,7 +317,7 @@ export default function Home() {
                       label="解鎖三主星深層交織心理影響與人格面具"
                       isUnlocked={unlockedModules.astroTriangleRatio}
                       onRequest={requestUnlock}
-                      blurPreview={<p style={{ fontSize: 16, color: "#FFF", lineHeight: 1.8 }}>太陽與月亮星座之間的深層心理張力揭示了 {{NAME}} 最隱秘的自我……</p>}
+                      blurPreview={<p style={{ fontSize: 16, color: "#FFF", lineHeight: 1.8 }}>太陽與月亮星座之間的深層心理張力揭示了 <span style={{ color: "#D4AF37", fontWeight: 700 }}>{nick}</span> 最隱秘的自我……</p>}
                     >
                       <div>
                         <div style={{ fontSize: 13, color: "#C9A84C", marginBottom: 10 }}>✦ 三主星深層解析已解鎖 ✦</div>
