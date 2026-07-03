@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "星穹密鑰：AI 塔羅與星盤探索"
+version = "1.0.0"
+id = "artifacts/star-tarot"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23847
+
+[services.development]
+run = "pnpm --filter @workspace/star-tarot run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/star-tarot", "run", "build" ]
+publicDir = "artifacts/star-tarot/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23847"
+BASE_PATH = "/"
