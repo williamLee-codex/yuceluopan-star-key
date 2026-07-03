@@ -25,8 +25,11 @@ const ZODIAC_SIGNS = [
   { name: "魔羯座", end: [12, 31] }
 ];
 
-/** Julian Day Number — converts Taiwan time (UTC+8) to JD */
-function julianDay(year: number, month: number, day: number, hour: number, minute: number, tzOffset = 8): number {
+/** Julian Day Number — converts Taiwan time (UTC+8) to UT JD */
+export function julianDay(
+  year: number, month: number, day: number,
+  hour: number, minute: number, tzOffset = 8
+): number {
   const utcFrac = (hour - tzOffset + minute / 60) / 24;
   let y = year, m = month;
   if (m <= 2) { y--; m += 12; }
@@ -44,18 +47,18 @@ export function getZodiac(month: number, day: number): string {
   return "魔羯座";
 }
 
-/** Moon ecliptic longitude via Meeus simplified algorithm (accurate ±2°) */
+/**
+ * Moon ecliptic longitude via Meeus simplified algorithm (accurate ±2°, sufficient for sign).
+ * Uses Taiwan UTC+8 via julianDay().
+ */
 export function getMoonSign(year: number, month: number, day: number, hour = 12, minute = 0): string {
   const JD = julianDay(year, month, day, hour, minute);
   const T = (JD - 2451545.0) / 36525;
-  // Mean lunar longitude
   const L0 = 218.3165 + 481267.8813 * T;
-  // Mean anomalies (degrees → radians)
   const M  = ((134.9634 + 477198.8676 * T) % 360) * Math.PI / 180;
-  const Ms = ((357.5291 + 35999.0503  * T) % 360) * Math.PI / 180;
-  const F  = ((93.2720  + 483202.0175 * T) % 360) * Math.PI / 180;
+  const Ms = ((357.5291 +  35999.0503 * T) % 360) * Math.PI / 180;
+  const F  = (( 93.2720 + 483202.0175 * T) % 360) * Math.PI / 180;
   const D  = ((297.8502 + 445267.1115 * T) % 360) * Math.PI / 180;
-  // Main perturbations
   const corr = 6.289 * Math.sin(M)
     - 1.274 * Math.sin(2 * D - M)
     + 0.658 * Math.sin(2 * D)
@@ -66,25 +69,80 @@ export function getMoonSign(year: number, month: number, day: number, hour = 12,
   return ZODIAC_NAMES[Math.floor(lon / 30) % 12];
 }
 
-/** Ascendant sign for Taiwan (lat 25°N, lon 121.5°E) */
-export function getRisingSign(year: number, month: number, day: number, hour: number, minute: number): string {
+/**
+ * Ascendant (Rising Sign) for Taiwan (lat 25°N, lon 121.5°E).
+ *
+ * Algorithm: scan the ecliptic for the degree where the altitude
+ * transitions from POSITIVE → NEGATIVE.  That crossing is where the
+ * ecliptic descends through the eastern horizon — i.e., the Ascendant.
+ *
+ * Background: at any instant the visible arc of the ecliptic (above the
+ * horizon) runs from the Ascendant (east, alt=0 dropping below) to the
+ * Descendant (west, alt=0 rising above).  In a scan of ecliptic longitude
+ * λ = 0°…360° at fixed LST the altitude profile is:
+ *
+ *   ASC  →  MC (max)  →  DSC  →  IC (min)  →  ASC
+ *
+ * So the altitude drops from + to – AT the Ascendant, and rises from – to +
+ * AT the Descendant.  We look for the + → – crossing.
+ */
+export function getRisingSign(
+  year: number, month: number, day: number,
+  hour: number, minute: number
+): string {
   const JD = julianDay(year, month, day, hour, minute);
   const d  = JD - 2451545.0;
+
   // Greenwich Mean Sidereal Time (degrees)
   const GMST = ((280.46061837 + 360.98564736629 * d) % 360 + 360) % 360;
   // Local Sidereal Time for Taiwan (121.5°E)
-  const LST  = (GMST + 121.5) % 360;
-  // Obliquity of ecliptic (degrees)
-  const eps  = (23.439 - 0.0000004 * d) * Math.PI / 180;
-  const RAMC = LST * Math.PI / 180;
+  const LST_rad = ((GMST + 121.5) % 360) * Math.PI / 180;
+  // Obliquity of ecliptic (radians)
+  const eps = (23.439 - 0.0000004 * d) * Math.PI / 180;
   // Geographic latitude 25°N
-  const lat  = 25.0 * Math.PI / 180;
-  // Ascendant longitude (standard western formula)
-  const y = -Math.cos(RAMC);
-  const x =  Math.sin(RAMC) * Math.cos(eps) + Math.tan(lat) * Math.sin(eps);
-  const asc = ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
+  const lat = 25.0 * Math.PI / 180;
+
+  /**
+   * sin(altitude) of the ecliptic point at longitude lam (degrees).
+   * Returns a value in [-1, 1]; positive = above horizon.
+   */
+  function sinAlt(lamDeg: number): number {
+    const lam = lamDeg * Math.PI / 180;
+    const ra  = Math.atan2(Math.sin(lam) * Math.cos(eps), Math.cos(lam));
+    const sinDec = Math.max(-1, Math.min(1, Math.sin(eps) * Math.sin(lam)));
+    const dec = Math.asin(sinDec);
+    const cosDec = Math.cos(dec);
+    const ha  = LST_rad - ra;
+    return Math.sin(lat) * sinDec + Math.cos(lat) * cosDec * Math.cos(ha);
+  }
+
+  // Scan in 1° steps; find where altitude transitions + → - (Ascendant)
+  for (let i = 0; i < 360; i++) {
+    const a1 = sinAlt(i);
+    const a2 = sinAlt(i + 1);
+    if (a1 > 0 && a2 <= 0) {
+      // Binary-search refinement (~0.001° precision)
+      // lo → last point above horizon; hi → first point AT/below horizon (= Ascendant)
+      let lo = i, hi = i + 1;
+      for (let k = 0; k < 20; k++) {
+        const mid = (lo + hi) / 2;
+        if (sinAlt(mid) > 0) lo = mid; else hi = mid;
+      }
+      // Use hi: the exact crossing point (or first degree on/below horizon = ASC)
+      return ZODIAC_NAMES[Math.floor(hi / 30) % 12];
+    }
+  }
+
+  // Fallback: use classical formula with quadrant correction
+  const RAMC = LST_rad;
+  const y2 = -Math.cos(RAMC);
+  const x2 = Math.sin(RAMC) * Math.cos(eps) + Math.tan(lat) * Math.sin(eps);
+  let asc = ((Math.atan2(y2, x2) * 180 / Math.PI) + 360) % 360;
+  if (x2 > 0) asc = (asc + 180) % 360; // quadrant correction
   return ZODIAC_NAMES[Math.floor(asc / 30) % 12];
 }
+
+// ─── Profile text pools ───────────────────────────────────────────────────────
 
 const INTROS = [
   "{{NAME}}，你的靈魂深處潛藏著一種古老的智慧，",
@@ -121,6 +179,8 @@ const DEEP_TRIPLE_PROFILES = [
   "{{NAME}} 的三主星格局呈現罕見的靈魂複雜度：太陽賦予強烈個人意志，月亮注入無法忽視的直覺感應，而上升讓你在他人眼中呈現神秘且令人想接近的氣場。{{NAME}} 最大的靈魂課題，在於讓這三個自我坦誠對話，而非暗中互相拉扯。"
 ];
 
+// ─── Public APIs ──────────────────────────────────────────────────────────────
+
 export function getBirthdayProfile(month: number, day: number) {
   const daysInMonths = [0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   let dayOfYear = day;
@@ -132,7 +192,9 @@ export function getBirthdayProfile(month: number, day: number) {
   return { archetype, profile, zodiac };
 }
 
-export function getTripleSignProfile(year: number, month: number, day: number, hour: number, minute: number) {
+export function getTripleSignProfile(
+  year: number, month: number, day: number, hour: number, minute: number
+) {
   const sunSign    = getZodiac(month, day);
   const moonSign   = getMoonSign(year, month, day, hour, minute);
   const risingSign = getRisingSign(year, month, day, hour, minute);

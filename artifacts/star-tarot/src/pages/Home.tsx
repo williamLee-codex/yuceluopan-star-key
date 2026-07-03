@@ -261,7 +261,7 @@ export default function Home() {
   const nick         = nickname.trim() || nicknameInput.trim() || "緣主";
   const profile      = getBirthdayProfile(birthday.month, birthday.day);
   const tripleSign   = getTripleSignProfile(birthday.year, birthday.month, birthday.day, birthday.hour, birthday.minute);
-  const planets      = getPlanetDeconstruction(birthday.month, birthday.day);
+  const planets      = getPlanetDeconstruction(birthday.month, birthday.day, birthday.year, birthday.hour, birthday.minute);
   const monthly      = getMonthlyForecast(birthday.month, birthday.day);
   const yearlyOverview = getYearlyOverview();
   const careerForecast = getCareerForecast(birthday.year, birthday.month, birthday.day);
@@ -391,27 +391,57 @@ export default function Home() {
                     </div>
                   </SectionCard>
 
-                  {/* Planets — header free, deep unlock 2pts each */}
+                  {/* Planets — sign + core text FREE, deep analysis locked 2pts */}
                   <div style={{ marginBottom: 14 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, paddingLeft: 4 }}>
-                      <GoldTitle size={18}>五行行星</GoldTitle>
-                      <span style={{ fontSize: 11, color: "#4AFF8C", border: "1px solid rgba(74,255,140,0.35)", padding: "2px 8px", borderRadius: 100 }}>落宮免費</span>
-                      <span style={{ fontSize: 11, color: "rgba(212,175,55,0.5)", background: "rgba(212,175,55,0.08)", padding: "2px 8px", borderRadius: 100, border: "1px solid rgba(212,175,55,0.2)" }}>深析各 2 點</span>
+                      <GoldTitle size={18}>五行行星落座</GoldTitle>
+                      <span style={{ fontSize: 11, color: "#4AFF8C", border: "1px solid rgba(74,255,140,0.35)", padding: "2px 8px", borderRadius: 100 }}>星座免費</span>
+                      <span style={{ fontSize: 11, color: "rgba(212,175,55,0.5)", background: "rgba(212,175,55,0.08)", padding: "2px 8px", borderRadius: 100, border: "1px solid rgba(212,175,55,0.2)" }}>深析 2 點</span>
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       {planets.map((p) => {
                         const pKey = PLANET_KEYS[p.planet];
                         return (
                           <div key={p.planet} style={{ background: "#0a0a0a", border: "1px solid rgba(212,175,55,0.22)", borderRadius: 14, overflow: "hidden" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderBottom: "1px solid rgba(212,175,55,0.1)" }}>
-                              <span style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(212,175,55,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#D4AF37", fontWeight: 700, fontSize: 13, flexShrink: 0 }}>{p.element}</span>
-                              <div><div style={{ color: "#C9A84C", fontWeight: 700, fontSize: 15 }}>{p.planet}</div><div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{p.domain}</div></div>
-                              {!!unlockedModules[pKey] && <span style={{ marginLeft: "auto", fontSize: 11, color: "rgba(74,255,140,0.7)", border: "1px solid rgba(74,255,140,0.3)", padding: "2px 8px", borderRadius: 100 }}>已解鎖</span>}
+
+                            {/* ── FREE header: planet + sign ── */}
+                            <div style={{ padding: "14px 16px 10px", borderBottom: "1px solid rgba(212,175,55,0.1)" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                                <span style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(212,175,55,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#D4AF37", fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{p.element}</span>
+                                <div>
+                                  <div style={{ color: "#C9A84C", fontWeight: 700, fontSize: 15 }}>{p.planet}</div>
+                                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{p.domain}</div>
+                                </div>
+                                {!!unlockedModules[pKey] && (
+                                  <span style={{ marginLeft: "auto", fontSize: 11, color: "rgba(74,255,140,0.7)", border: "1px solid rgba(74,255,140,0.3)", padding: "2px 8px", borderRadius: 100 }}>已解鎖</span>
+                                )}
+                              </div>
+                              {/* ★ Sign — prominently displayed for free ★ */}
+                              <div style={{ textAlign: "center", padding: "10px 0 6px" }}>
+                                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 4 }}>落入星座</div>
+                                <div style={{ fontSize: 26, fontWeight: 700, color: "#FFD666", textShadow: "0 0 14px rgba(255,214,102,0.7),0 0 28px rgba(255,214,102,0.35)", letterSpacing: "0.04em" }}>
+                                  {p.sign}
+                                </div>
+                              </div>
+                              {/* Core 1-sentence influence — free */}
+                              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", lineHeight: 1.75, margin: "8px 0 0", borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 8 }}>
+                                {p.coreText}
+                              </p>
                             </div>
+
+                            {/* ── LOCKED: deep analysis ── */}
                             <div style={{ padding: "12px 16px" }}>
-                              <MiniLockedSection moduleKey={pKey} label={`${p.planet}深層盲區解析`}
-                                isUnlocked={!!unlockedModules[pKey]} onRequest={requestUnlock}
-                                blurPreview={<p style={{ fontSize: 15, color: "#FFF", lineHeight: 1.8 }}>{p.analysis.substring(0, 20)}……</p>}>
+                              <MiniLockedSection
+                                moduleKey={pKey}
+                                label={`${p.planet}深層心理盲區深度解析`}
+                                isUnlocked={!!unlockedModules[pKey]}
+                                onRequest={requestUnlock}
+                                blurPreview={
+                                  <p style={{ fontSize: 15, color: "#FFF", lineHeight: 1.8 }}>
+                                    {p.analysis.substring(0, 22)}……
+                                  </p>
+                                }
+                              >
                                 <BodyText style={{ fontSize: 16 }}>{renderNick(p.analysis, nick)}</BodyText>
                               </MiniLockedSection>
                             </div>
