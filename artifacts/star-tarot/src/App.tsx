@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import { PointsProvider } from "@/contexts/PointsContext";
+import { NicknameProvider } from "@/contexts/NicknameContext";
 
 const queryClient = new QueryClient();
 
@@ -21,16 +22,18 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <PointsProvider>
-        <TooltipProvider>
-          <div className="min-h-[100dvh] bg-[#0D0D0D] dark w-full flex justify-center overflow-x-hidden">
-            <div className="w-full max-w-[430px] bg-[#0D0D0D] min-h-screen relative shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-                <Router />
-              </WouterRouter>
-              <Toaster />
+        <NicknameProvider>
+          <TooltipProvider>
+            <div className="min-h-[100dvh] bg-[#0D0D0D] dark w-full flex justify-center overflow-x-hidden">
+              <div className="w-full max-w-[430px] bg-[#0D0D0D] min-h-screen relative shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+                <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                  <Router />
+                </WouterRouter>
+                <Toaster />
+              </div>
             </div>
-          </div>
-        </TooltipProvider>
+          </TooltipProvider>
+        </NicknameProvider>
       </PointsProvider>
     </QueryClientProvider>
   );
