@@ -17,39 +17,30 @@ import { getMercuryRetrogradeStatus } from "@/lib/mercury";
 const starTarotPricing = {
   astroTriangleRatio: 12,
   tarotDivination: 6,
-  monthlyBlueprint: 6,
+  allFivePlanets: 6,
+  yearlyTotalDestiny: 10,
+  birthdayDestiny: 2,
   friendCompatibility: 10,
-  careerDestiny: 10,
-  loveDestiny: 10,
-  wealthDestiny: 10,
   spouseMatch: 4,
   bossMatch: 4,
   colleagueMatch: 4,
   friendMatch: 4,
-  venusDeep: 2,
-  jupiterDeep: 2,
-  mercuryDeep: 2,
-  marsDeep: 2,
-  saturnDeep: 2,
-  birthdayDestiny: 2,
 } as const;
 type PricingKey = keyof typeof starTarotPricing;
 
 /* ─── Tabs ──────────────────────────────────────────────────────── */
-type TabId = "tianguo" | "tarot" | "shikong" | "resonance";
+type TabId = "tianguo" | "tarot" | "shikong" | "resonance" | "birthday";
 const TABS: { id: TabId; label: string; glyph: string }[] = [
   { id: "tianguo",   label: "星穹天機", glyph: "✦" },
   { id: "tarot",     label: "量子塔羅", glyph: "🔮" },
   { id: "shikong",   label: "時空流轉", glyph: "◎" },
   { id: "resonance", label: "量子共鳴", glyph: "⟡" },
+  { id: "birthday",  label: "天命生日", glyph: "🎂" },
 ];
-
-const PLANET_KEYS: Record<string, PricingKey> = {
-  金星: "venusDeep", 木星: "jupiterDeep", 水星: "mercuryDeep", 火星: "marsDeep", 土星: "saturnDeep",
-};
 const SOULMATE_PRICING_KEYS: Record<string, PricingKey> = {
   spouse: "spouseMatch", boss: "bossMatch", colleague: "colleagueMatch", friend: "friendMatch",
 };
+
 const SOULMATE_LABELS: Record<string, string> = {
   spouse: "天命配偶歸宿", boss: "提攜貴人上司", colleague: "專案執行同事", friend: "解壓傾聽朋友",
 };
@@ -537,125 +528,62 @@ export default function Home() {
                     </div>
                   </SectionCard>
 
-                  {/* Planets — sign + core text FREE, deep analysis 2pts */}
+                  {/* Planets — sign + core text FREE, deep analysis 6pts (all 5 bundled) */}
                   <div style={{ marginBottom: 14 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, paddingLeft: 4 }}>
                       <GoldTitle size={18}>五行行星落座</GoldTitle>
                       <span style={{ fontSize: 11, color: "#4AFF8C", border: "1px solid rgba(74,255,140,0.35)", padding: "2px 8px", borderRadius: 100 }}>星座免費</span>
-                      <span style={{ fontSize: 11, color: "rgba(212,175,55,0.5)", background: "rgba(212,175,55,0.08)", padding: "2px 8px", borderRadius: 100, border: "1px solid rgba(212,175,55,0.2)" }}>深析 2 點</span>
+                      <span style={{ fontSize: 11, color: "rgba(212,175,55,0.5)", background: "rgba(212,175,55,0.08)", padding: "2px 8px", borderRadius: 100, border: "1px solid rgba(212,175,55,0.2)" }}>五星全解 6 點</span>
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                      {planets.map((p) => {
-                        const pKey = PLANET_KEYS[p.planet];
-                        return (
-                          <div key={p.planet} style={{ background: "#0a0a0a", border: "1px solid rgba(212,175,55,0.22)", borderRadius: 14, overflow: "hidden" }}>
-                            <div style={{ padding: "14px 16px 10px", borderBottom: "1px solid rgba(212,175,55,0.1)" }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                                <span style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(212,175,55,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#D4AF37", fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{p.element}</span>
-                                <div>
-                                  <div style={{ color: "#C9A84C", fontWeight: 700, fontSize: 15 }}>{p.planet}</div>
-                                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{p.domain}</div>
-                                </div>
-                                {!!unlockedModules[pKey] && (
-                                  <span style={{ marginLeft: "auto", fontSize: 11, color: "rgba(74,255,140,0.7)", border: "1px solid rgba(74,255,140,0.3)", padding: "2px 8px", borderRadius: 100 }}>已解鎖</span>
-                                )}
+                      {planets.map((p) => (
+                        <div key={p.planet} style={{ background: "#0a0a0a", border: "1px solid rgba(212,175,55,0.22)", borderRadius: 14, overflow: "hidden" }}>
+                          <div style={{ padding: "14px 16px 10px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                              <span style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(212,175,55,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#D4AF37", fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{p.element}</span>
+                              <div>
+                                <div style={{ color: "#C9A84C", fontWeight: 700, fontSize: 15 }}>{p.planet}</div>
+                                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{p.domain}</div>
                               </div>
-                              <div style={{ textAlign: "center", padding: "10px 0 6px" }}>
-                                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 4 }}>落入星座</div>
-                                <div style={{ fontSize: 26, fontWeight: 700, color: "#FFD666", textShadow: "0 0 14px rgba(255,214,102,0.7),0 0 28px rgba(255,214,102,0.35)", letterSpacing: "0.04em" }}>
-                                  {p.sign}
-                                </div>
-                              </div>
-                              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", lineHeight: 1.75, margin: "8px 0 0", borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 8 }}>
-                                {p.coreText}
-                              </p>
                             </div>
-                            <div style={{ padding: "12px 16px" }}>
-                              <MiniLockedSection
-                                moduleKey={pKey}
-                                label={`${p.planet}深層心理盲區深度解析`}
-                                isUnlocked={!!unlockedModules[pKey]}
-                                onRequest={requestUnlock}
-                                blurPreview={<p style={{ fontSize: 15, color: "#FFF", lineHeight: 1.8 }}>{p.analysis.substring(0, 22)}……</p>}
-                              >
+                            <div style={{ textAlign: "center", padding: "10px 0 6px" }}>
+                              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 4 }}>落入星座</div>
+                              <div style={{ fontSize: 26, fontWeight: 700, color: "#FFD666", textShadow: "0 0 14px rgba(255,214,102,0.7),0 0 28px rgba(255,214,102,0.35)", letterSpacing: "0.04em" }}>{p.sign}</div>
+                            </div>
+                            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", lineHeight: 1.75, margin: "8px 0 0", borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 8 }}>{p.coreText}</p>
+                            {!!unlockedModules.allFivePlanets && (
+                              <div style={{ marginTop: 12, background: "rgba(212,175,55,0.04)", border: "1px solid rgba(212,175,55,0.15)", borderRadius: 10, padding: "12px 14px" }}>
                                 <BodyText style={{ fontSize: 16 }}>{renderNick(p.analysis, nick)}</BodyText>
-                              </MiniLockedSection>
-                            </div>
+                              </div>
+                            )}
                           </div>
-                        );
-                      })}
+                        </div>
+                      ))}
                     </div>
+                    {!unlockedModules.allFivePlanets && (
+                      <button onClick={e => { e.preventDefault(); requestUnlock("allFivePlanets", "萬象五星一鍵全解鎖"); }} data-testid="btn-unlock-allFivePlanets"
+                        style={{ width: "100%", marginTop: 14, padding: "14px 0", background: "linear-gradient(90deg,#B38728,#FBF5B7)", color: "#000", fontWeight: 700, fontSize: 15, border: "none", borderRadius: 100, cursor: "pointer", boxShadow: "0 0 14px rgba(212,175,55,0.35)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                        <Lock size={15} /> 一鍵解鎖五星深層盲區全析（{starTarotPricing.allFivePlanets} 點）
+                      </button>
+                    )}
+                    {!!unlockedModules.allFivePlanets && (
+                      <div style={{ marginTop: 10, textAlign: "center", fontSize: 12, color: "rgba(74,255,140,0.7)", border: "1px solid rgba(74,255,140,0.25)", borderRadius: 100, padding: "4px 0" }}>✦ 五星深析已全解鎖 ✦</div>
+                    )}
                   </div>
 
-                  {/* ★ Birthday Destiny — 2pts with special announcement ★ */}
-                  <SectionCard>
-                    {/* Permanent announcement banner — always visible */}
-                    <div style={{ background: "rgba(212,175,55,0.08)", border: "1px solid rgba(212,175,55,0.35)", borderRadius: 12, padding: "14px 16px", marginBottom: 18 }}>
-                      <p style={{ fontSize: 16, fontWeight: 700, color: "#D4AF37", lineHeight: 1.8, margin: 0, textShadow: "0 0 10px rgba(212,175,55,0.4)" }}>
-                        💡 星穹密鑰・特別回饋公告：本項目（天命生日個性詳解）為平台初次顯化之「破冰福利」，特別由大師資料庫進行全解鎖回饋，僅象徵性收取 2 點。此為破格特惠，其餘核心天機（如三主星交織、今年大大運天書、量子共鳴深度報告）均涉及更高階、高消耗之大數據心理學與時空軌跡交叉精算，兩者計費權重不同，請依據個人剛需酌情解鎖。
-                      </p>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                      <GoldTitle size={20}>天命生日個性詳解</GoldTitle>
-                      <span style={{ fontSize: 12, color: "#C9A84C", border: "1px solid rgba(212,175,55,0.35)", padding: "2px 10px", borderRadius: 100 }}>破冰特惠 {starTarotPricing.birthdayDestiny} 點</span>
-                    </div>
-                    {/* Blur preview teaser */}
-                    <MiniLockedSection
-                      moduleKey="birthdayDestiny"
-                      label="解鎖天命生日個性全詳解（400+字）"
-                      isUnlocked={!!unlockedModules.birthdayDestiny}
-                      onRequest={requestUnlock}
-                      blurPreview={
-                        <div>
-                          <p style={{ fontSize: 16, color: "#FFF", lineHeight: 1.8 }}>
-                            <span style={{ color: "#FFD666", fontWeight: 700 }}>【太陽野心密碼】</span><br />
-                            {destinyReport.sunText.replace(/\{\{NAME\}\}/g, nick).substring(0, 30)}……
-                          </p>
-                          <p style={{ fontSize: 16, color: "#FFF", lineHeight: 1.8, marginTop: 8 }}>
-                            <span style={{ color: "#B8D4FF", fontWeight: 700 }}>【月亮情緒地雷】</span><br />
-                            {destinyReport.moonText.replace(/\{\{NAME\}\}/g, nick).substring(0, 30)}……
-                          </p>
-                        </div>
-                      }
-                    >
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                        <div style={{ fontSize: 13, color: "#C9A84C", textAlign: "center", marginBottom: 16, letterSpacing: "0.06em" }}>✦ 天命生日個性詳解已全解鎖 ✦</div>
-
-                        {/* Section 1: Sun */}
-                        <div style={{ background: "rgba(255,214,102,0.05)", border: "1px solid rgba(255,214,102,0.2)", borderRadius: 12, padding: "16px 14px", marginBottom: 14 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                            <span style={{ fontSize: 18 }}>☀</span>
-                            <span style={{ fontSize: 15, fontWeight: 700, color: "#FFD666" }}>太陽能量庫 · 外在野心密碼</span>
-                          </div>
-                          <BodyText style={{ fontSize: 17 }}>{renderNick(destinyReport.sunText, nick)}</BodyText>
-                        </div>
-
-                        {/* Section 2: Moon */}
-                        <div style={{ background: "rgba(184,212,255,0.05)", border: "1px solid rgba(184,212,255,0.18)", borderRadius: 12, padding: "16px 14px", marginBottom: 14 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                            <span style={{ fontSize: 18 }}>🌙</span>
-                            <span style={{ fontSize: 15, fontWeight: 700, color: "#B8D4FF" }}>月亮情緒庫 · 暗夜情緒地雷</span>
-                          </div>
-                          <BodyText style={{ fontSize: 17 }}>{renderNick(destinyReport.moonText, nick)}</BodyText>
-                        </div>
-
-                        {/* Section 3: Life Path */}
-                        <div style={{ background: "rgba(196,163,255,0.05)", border: "1px solid rgba(196,163,255,0.18)", borderRadius: 12, padding: "16px 14px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                            <span style={{ fontSize: 18 }}>✦</span>
-                            <span style={{ fontSize: 15, fontWeight: 700, color: "#C4A3FF" }}>生命靈數 {destinyReport.lifePathNum} · 靈魂天命原型</span>
-                          </div>
-                          <BodyText style={{ fontSize: 17 }}>{renderNick(destinyReport.lifePathText, nick)}</BodyText>
-                        </div>
-                      </motion.div>
-                    </MiniLockedSection>
-                  </SectionCard>
                 </div>
               )}
 
               {/* ════ TAB 2: 量子塔羅 ════ */}
               {activeTab === "tarot" && (
                 <div>
+                  {/* Rules banner — always visible at top */}
+                  <div style={{ background: "rgba(212,175,55,0.07)", border: "1px solid rgba(212,175,55,0.35)", borderRadius: 14, padding: "16px 18px", marginBottom: 16 }}>
+                    <p style={{ fontSize: 15, color: "#D4AF37", lineHeight: 1.85, margin: 0, textShadow: "0 0 10px rgba(212,175,55,0.35)", fontWeight: 600 }}>
+                      🔮 量子塔羅占卜規則：請先在心中默想您今日最想祈求的指引或問題，隨後在下方隨機排列的牌陣中，憑第一直覺點選感應卡牌，即可消耗 6 點解鎖今日之命運翻牌啟示。
+                    </p>
+                  </div>
+
                   <SectionCard>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                       <GoldTitle size={22}>大阿爾克那牌陣</GoldTitle>
@@ -701,46 +629,23 @@ export default function Home() {
                               <div style={{ fontSize: 20, fontWeight: 700, color: "#D4AF37", textShadow: "0 0 10px rgba(212,175,55,0.5)" }}>{drawnCard.name}</div>
                             </div>
                           </div>
-
-                          {/* Block 1: Essence */}
                           <div style={{ marginBottom: 14 }}>
                             <div style={{ fontSize: 13, color: "#FFD666", fontWeight: 700, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
                               <span>✦</span> 牌面本質
                             </div>
                             <BodyText style={{ fontSize: 16 }}>{renderNick(drawnCard.essence, nick)}</BodyText>
                           </div>
-
-                          {/* Block 2: Blindspot */}
                           <div style={{ marginBottom: 14, background: "rgba(255,107,74,0.05)", border: "1px solid rgba(255,107,74,0.15)", borderRadius: 10, padding: "12px 14px" }}>
                             <div style={{ fontSize: 13, color: "#FF9F7A", fontWeight: 700, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
                               <span>⚠</span> 心理盲區
                             </div>
                             <BodyText style={{ fontSize: 16 }}>{renderNick(drawnCard.blindspot, nick)}</BodyText>
                           </div>
-
-                          {/* Block 3: Breakthrough */}
                           <div style={{ background: "rgba(74,255,140,0.05)", border: "1px solid rgba(74,255,140,0.15)", borderRadius: 10, padding: "12px 14px" }}>
                             <div style={{ fontSize: 13, color: "#4AFF8C", fontWeight: 700, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
                               <span>⚡</span> 宇宙破局建議
                             </div>
                             <BodyText style={{ fontSize: 16 }}>{renderNick(drawnCard.breakthrough, nick)}</BodyText>
-                          </div>
-                        </div>
-
-                        {/* Pick any of 22 */}
-                        <div style={{ marginTop: 16 }}>
-                          <div style={{ fontSize: 13, color: "rgba(212,175,55,0.55)", marginBottom: 10, textAlign: "center" }}>✦ 點選感應你的牌 ✦</div>
-                          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6 }}>
-                            {MAJOR_ARCANA.map((card) => {
-                              const sel = card.id === tarotIdx;
-                              return (
-                                <div key={card.id} onClick={e => { e.preventDefault(); setTarotDrawn(card.id); }}
-                                  style={{ padding: "8px 4px", background: sel ? "rgba(212,175,55,0.15)" : "rgba(212,175,55,0.04)", border: `1px solid ${sel ? "#D4AF37" : "rgba(212,175,55,0.15)"}`, borderRadius: 8, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer", transition: "all 0.2s" }}>
-                                  <span style={{ fontSize: 16 }}>{card.emoji}</span>
-                                  <span style={{ fontSize: 9, color: sel ? "#D4AF37" : "rgba(255,255,255,0.35)", textAlign: "center", lineHeight: 1.2 }}>{card.name}</span>
-                                </div>
-                              );
-                            })}
                           </div>
                         </div>
                       </motion.div>
@@ -783,20 +688,16 @@ export default function Home() {
                     </ul>
                   </SectionCard>
 
-                  {/* Monthly (6pts) */}
+                  {/* Monthly — FREE */}
                   <SectionCard>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                       <GoldTitle size={20}>本月心靈藍圖</GoldTitle>
-                      <span style={{ fontSize: 12, color: "rgba(212,175,55,0.4)" }}>{starTarotPricing.monthlyBlueprint} 點</span>
+                      <FreeTag />
                     </div>
-                    <MiniLockedSection moduleKey="monthlyBlueprint" label="解鎖本月運勢"
-                      isUnlocked={unlockedModules.monthlyBlueprint} onRequest={requestUnlock}
-                      blurPreview={<div style={{ display: "flex", flexDirection: "column", gap: 8 }}>{[100,85,70,90].map((w,i)=><div key={i} style={{height:13,background:"rgba(212,175,55,0.12)",borderRadius:6,width:`${w}%`}}/>)}</div>}>
-                      <BodyText>{renderNick(monthly, nick)}</BodyText>
-                    </MiniLockedSection>
+                    <BodyText>{renderNick(monthly, nick)}</BodyText>
                   </SectionCard>
 
-                  {/* Yearly */}
+                  {/* Yearly — unified 10pt unlock */}
                   <SectionCard>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                       <GoldTitle size={20}>今年大運軌跡</GoldTitle>
@@ -806,31 +707,112 @@ export default function Home() {
                       <div style={{ fontSize: 13, color: "#C9A84C", marginBottom: 10 }}>✦ 宏觀宇宙引力提示 · 全體適用 ✦</div>
                       <BodyText>{yearlyOverview}</BodyText>
                     </div>
-                    <div style={{ fontSize: 15, color: "rgba(255,255,255,0.6)", marginBottom: 12 }}>
-                      解鎖 <span style={{ color: "#D4AF37", fontWeight: 700 }}>{nick}</span> 的三維個人天機：
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                      {([
-                        { key: "careerDestiny" as PricingKey, label: "天命黃金事業流轉", icon: "⚡", text: careerForecast },
-                        { key: "loveDestiny"   as PricingKey, label: "宿命靈魂正緣羈絆", icon: "♾", text: loveForecast },
-                        { key: "wealthDestiny" as PricingKey, label: "宇宙天意財富盲區", icon: "✦", text: wealthForecast },
-                      ]).map(({ key, label, icon, text }) => (
-                        <div key={key} style={{ background: "#0a0a0a", border: "1px solid rgba(212,175,55,0.22)", borderRadius: 14, overflow: "hidden" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderBottom: "1px solid rgba(212,175,55,0.1)" }}>
-                            <span style={{ fontSize: 18, color: "#D4AF37" }}>{icon}</span>
-                            <span style={{ color: "#C9A84C", fontWeight: 700, fontSize: 15 }}>{label}</span>
-                            <span style={{ marginLeft: "auto", fontSize: 12, color: "rgba(212,175,55,0.45)" }}>{starTarotPricing[key]} 點</span>
-                          </div>
-                          <div style={{ padding: "12px 16px" }}>
-                            <MiniLockedSection moduleKey={key} label={`解鎖${label}`}
-                              isUnlocked={!!unlockedModules[key]} onRequest={requestUnlock}
-                              blurPreview={<div style={{ height: 44, background: "rgba(212,175,55,0.05)", borderRadius: 8 }}/>}>
-                              <BodyText style={{ fontSize: 16 }}>{renderNick(text, nick)}</BodyText>
-                            </MiniLockedSection>
-                          </div>
+                    <MiniLockedSection moduleKey="yearlyTotalDestiny" label={`解鎖 ${nick} 全年大運三維度（事業・感情・財富）`}
+                      isUnlocked={!!unlockedModules.yearlyTotalDestiny} onRequest={requestUnlock}
+                      blurPreview={
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          {[{ icon: "⚡", label: "天命黃金事業流轉" }, { icon: "♾", label: "宿命靈魂正緣羈絆" }, { icon: "✦", label: "宇宙天意財富盲區" }].map(({ icon, label }) => (
+                            <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <span style={{ fontSize: 16, color: "#D4AF37" }}>{icon}</span>
+                              <div style={{ height: 13, background: "rgba(212,175,55,0.12)", borderRadius: 6, flex: 1 }} />
+                              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>{label}</span>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      }>
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                        <div style={{ fontSize: 13, color: "#C9A84C", textAlign: "center", marginBottom: 4, letterSpacing: "0.06em" }}>✦ 全年大運三維度已解鎖 ✦</div>
+                        {([
+                          { label: "⚡ 天命黃金事業流轉", color: "#FFD666", bg: "rgba(255,214,102,0.05)", border: "rgba(255,214,102,0.2)", text: careerForecast },
+                          { label: "♾ 宿命靈魂正緣羈絆", color: "#C4A3FF", bg: "rgba(196,163,255,0.05)", border: "rgba(196,163,255,0.2)", text: loveForecast },
+                          { label: "✦ 宇宙天意財富盲區", color: "#4AFF8C", bg: "rgba(74,255,140,0.05)", border: "rgba(74,255,140,0.15)", text: wealthForecast },
+                        ]).map(({ label, color, bg, border, text }) => (
+                          <div key={label} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 12, padding: "14px 14px" }}>
+                            <p style={{ color, fontWeight: 700, fontSize: 14, marginBottom: 10 }}>{label}</p>
+                            <BodyText style={{ fontSize: 16 }}>{renderNick(text, nick)}</BodyText>
+                          </div>
+                        ))}
+                      </motion.div>
+                    </MiniLockedSection>
+                  </SectionCard>
+                </div>
+              )}
+
+              {/* ════ TAB 5: 天命生日個性詳解 ════ */}
+              {activeTab === "birthday" && (
+                <div>
+                  <SectionCard>
+                    {/* Announcement banner */}
+                    <div style={{ background: "rgba(212,175,55,0.08)", border: "1px solid rgba(212,175,55,0.35)", borderRadius: 12, padding: "14px 16px", marginBottom: 18 }}>
+                      <p style={{ fontSize: 15, fontWeight: 700, color: "#D4AF37", lineHeight: 1.8, margin: 0, textShadow: "0 0 10px rgba(212,175,55,0.4)" }}>
+                        💡 星穹密鑰・特別回饋公告：本項目為平台初次顯化之「破冰福利」，特別由大師資料庫進行全解鎖回饋，僅象徵性收取 2 點。此為破格特惠，其餘核心天機（如三主星交織、今年大運天書、量子共鳴深度報告）均涉及更高階大數據心理學與時空軌跡交叉精算，兩者計費權重不同，請依個人剛需酌情解鎖。
+                      </p>
                     </div>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                      <GoldTitle size={20}>天命生日個性詳解</GoldTitle>
+                      <span style={{ fontSize: 12, color: "#C9A84C", border: "1px solid rgba(212,175,55,0.35)", padding: "2px 10px", borderRadius: 100 }}>破冰特惠 {starTarotPricing.birthdayDestiny} 點</span>
+                    </div>
+
+                    <MiniLockedSection
+                      moduleKey="birthdayDestiny"
+                      label="解鎖天命生日個性全詳解（400+字）"
+                      isUnlocked={!!unlockedModules.birthdayDestiny}
+                      onRequest={requestUnlock}
+                      blurPreview={
+                        <div>
+                          <p style={{ fontSize: 17, color: "#FFD666", fontWeight: 700, lineHeight: 1.8, marginBottom: 6 }}>
+                            {birthday.month}月{birthday.day}日生的你是...
+                          </p>
+                          <p style={{ fontSize: 16, color: "#FFF", lineHeight: 1.8 }}>
+                            <span style={{ color: "#FFD666", fontWeight: 700 }}>【太陽野心密碼】</span><br />
+                            {destinyReport.sunText.replace(/\{\{NAME\}\}/g, nick).substring(0, 30)}……
+                          </p>
+                          <p style={{ fontSize: 16, color: "#FFF", lineHeight: 1.8, marginTop: 8 }}>
+                            <span style={{ color: "#B8D4FF", fontWeight: 700 }}>【月亮情緒地雷】</span><br />
+                            {destinyReport.moonText.replace(/\{\{NAME\}\}/g, nick).substring(0, 30)}……
+                          </p>
+                        </div>
+                      }
+                    >
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                        {/* Personalised opener — mandatory format */}
+                        <div style={{ textAlign: "center", marginBottom: 20, padding: "18px 14px", background: "rgba(212,175,55,0.06)", border: "1px solid rgba(212,175,55,0.3)", borderRadius: 14 }}>
+                          <p style={{ fontSize: 22, fontWeight: 700, color: "#D4AF37", lineHeight: 1.6, margin: 0, textShadow: "0 0 14px rgba(212,175,55,0.5)" }}>
+                            {birthday.month}月{birthday.day}日生的你是...
+                          </p>
+                        </div>
+
+                        <div style={{ fontSize: 13, color: "#C9A84C", textAlign: "center", marginBottom: 16, letterSpacing: "0.06em" }}>✦ 天命生日個性詳解已全解鎖 ✦</div>
+
+                        {/* Section 1: Sun */}
+                        <div style={{ background: "rgba(255,214,102,0.05)", border: "1px solid rgba(255,214,102,0.2)", borderRadius: 12, padding: "16px 14px", marginBottom: 14 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                            <span style={{ fontSize: 18 }}>☀</span>
+                            <span style={{ fontSize: 15, fontWeight: 700, color: "#FFD666" }}>太陽能量庫 · 外在野心密碼</span>
+                          </div>
+                          <BodyText style={{ fontSize: 17 }}>{renderNick(destinyReport.sunText, nick)}</BodyText>
+                        </div>
+
+                        {/* Section 2: Moon */}
+                        <div style={{ background: "rgba(184,212,255,0.05)", border: "1px solid rgba(184,212,255,0.18)", borderRadius: 12, padding: "16px 14px", marginBottom: 14 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                            <span style={{ fontSize: 18 }}>🌙</span>
+                            <span style={{ fontSize: 15, fontWeight: 700, color: "#B8D4FF" }}>月亮情緒庫 · 暗夜情緒地雷</span>
+                          </div>
+                          <BodyText style={{ fontSize: 17 }}>{renderNick(destinyReport.moonText, nick)}</BodyText>
+                        </div>
+
+                        {/* Section 3: Life Path */}
+                        <div style={{ background: "rgba(196,163,255,0.05)", border: "1px solid rgba(196,163,255,0.18)", borderRadius: 12, padding: "16px 14px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                            <span style={{ fontSize: 18 }}>✦</span>
+                            <span style={{ fontSize: 15, fontWeight: 700, color: "#C4A3FF" }}>生命靈數 {destinyReport.lifePathNum} · 靈魂天命原型</span>
+                          </div>
+                          <BodyText style={{ fontSize: 17 }}>{renderNick(destinyReport.lifePathText, nick)}</BodyText>
+                        </div>
+                      </motion.div>
+                    </MiniLockedSection>
                   </SectionCard>
                 </div>
               )}
