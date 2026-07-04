@@ -13,6 +13,48 @@ import { getSoulmateProfile, getSoulmateCategories, type SoulmateCategory } from
 import { getCompatibility } from "@/lib/compatibility";
 import { getMercuryRetrogradeStatus } from "@/lib/mercury";
 
+/* ─── localStorage helpers ──────────────────────────────────────── */
+const LS_UNLOCK_RECORDS = "starTarot_unlockedRecords";
+const LS_PROFILE_INDEX  = "starTarot_profileIndex";
+
+function buildUserKey(nick: string, bd: BirthdayValue): string {
+  return `${nick}_${bd.year}_${bd.month}_${bd.day}_${bd.hour}_${bd.minute}`;
+}
+
+function loadUnlockedModulesForKey(userKey: string): Record<string, boolean> {
+  try {
+    const records = JSON.parse(localStorage.getItem(LS_UNLOCK_RECORDS) || "{}") as Record<string, Record<string, boolean>>;
+    const result: Record<string, boolean> = {};
+    for (const mKey of Object.keys(records)) {
+      if (records[mKey]?.[userKey]) result[mKey] = true;
+    }
+    return result;
+  } catch { return {}; }
+}
+
+function saveUnlockRecord(moduleKey: string, userKey: string): void {
+  try {
+    const records = JSON.parse(localStorage.getItem(LS_UNLOCK_RECORDS) || "{}") as Record<string, Record<string, boolean>>;
+    if (!records[moduleKey]) records[moduleKey] = {};
+    records[moduleKey][userKey] = true;
+    localStorage.setItem(LS_UNLOCK_RECORDS, JSON.stringify(records));
+  } catch {}
+}
+
+type ProfileEntry = { year: number; month: number; day: number; hour: number; minute: number; isUnknownTime: boolean };
+
+function getProfileIndex(): Record<string, ProfileEntry> {
+  try { return JSON.parse(localStorage.getItem(LS_PROFILE_INDEX) || "{}"); } catch { return {}; }
+}
+
+function saveProfileEntry(nick: string, bd: BirthdayValue, isUnknownTime: boolean): void {
+  try {
+    const idx = getProfileIndex();
+    idx[nick] = { year: bd.year, month: bd.month, day: bd.day, hour: bd.hour, minute: bd.minute, isUnknownTime };
+    localStorage.setItem(LS_PROFILE_INDEX, JSON.stringify(idx));
+  } catch {}
+}
+
 /* ─── Pricing ──────────────────────────────────────────────────── */
 const starTarotPricing = {
   astroTriangleRatio: 12,
@@ -304,6 +346,10 @@ export default function Home() {
   const [birthday, setBirthday] = useState<BirthdayValue>({ year: 1990, month: 1, day: 1, hour: 12, minute: 0 });
   const [unknownTime, setUnknownTime] = useState(false);
 
+  // Profile lock state
+  const [confirmedUserKey, setConfirmedUserKey] = useState<string | null>(null);
+  const [isProfileLocked, setIsProfileLocked] = useState(false);
+
   // App state
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>("tianguo");
@@ -343,11 +389,36 @@ export default function Home() {
   }, []);
 
   // ── Handlers ─────────────────────────────────────────────────────
-  const handleUnlock = (e: React.MouseEvent) => {
+  const handleNicknameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setNicknameInput(val);
+    if (!isProfileLocked) {
+      const idx = getProfileIndex();
+      if (idx[val]) {
+        const p = idx[val];
+        setBirthday({ year: p.year, month: p.month, day: p.day, hour: p.hour, minute: p.minute });
+        setUnknownTime(p.isUnknownTime);
+      }
+    }
+  };
+
+  const handleConfirm = (e: React.MouseEvent) => {
     e.preventDefault();
-    setNickname(nicknameInput);
+    const nick = nicknameInput.trim() || "緣主";
+    const key  = buildUserKey(nick, birthday);
+    setNickname(nick);
+    setConfirmedUserKey(key);
+    setIsProfileLocked(true);
+    const saved = loadUnlockedModulesForKey(key);
+    setUnlockedModules(saved);
+    saveProfileEntry(nick, birthday, unknownTime);
     setIsUnlocked(true);
     setTimeout(() => contentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
+  };
+
+  const handleEditProfile = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsProfileLocked(false);
   };
 
   const handleTabSwitch = (id: TabId) => {
@@ -369,7 +440,10 @@ export default function Home() {
 
   const confirmUnlock = () => {
     if (!confirmModal) return;
-    if (deductPoints(confirmModal.cost)) setUnlockedModules(prev => ({ ...prev, [confirmModal.key]: true }));
+    if (deductPoints(confirmModal.cost)) {
+      setUnlockedModules(prev => ({ ...prev, [confirmModal.key]: true }));
+      if (confirmedUserKey) saveUnlockRecord(confirmModal.key, confirmedUserKey);
+    }
     setConfirmModal(null);
   };
 
@@ -415,71 +489,80 @@ export default function Home() {
           <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: 16, padding: "20px 14px" }}>
             <p style={{ fontSize: 17, color: "#FFF", marginBottom: 14, lineHeight: 1.7 }}>「請輸入您的生辰軌跡以解鎖密鑰」</p>
 
-            {/* Nickname */}
-            <input type="text" value={nicknameInput} onChange={e => setNicknameInput(e.target.value)}
+            {/* Nickname — with address-book auto-fill */}
+            <input type="text" value={nicknameInput} onChange={handleNicknameChange}
               placeholder="請輸入您的專屬暱稱（如：緣主、William）"
-              maxLength={12} data-testid="input-nickname"
-              style={{ width: "100%", boxSizing: "border-box", padding: "12px 16px", background: "rgba(0,0,0,0.5)", border: "1px solid rgba(212,175,55,0.4)", borderRadius: 10, color: "#D4AF37", fontSize: 16, fontFamily: "inherit", outline: "none", marginBottom: 14, caretColor: "#D4AF37", userSelect: "text", WebkitUserSelect: "text" }}
+              maxLength={12} data-testid="input-nickname" disabled={isProfileLocked}
+              style={{ width: "100%", boxSizing: "border-box", padding: "12px 16px", background: isProfileLocked ? "rgba(0,0,0,0.35)" : "rgba(0,0,0,0.5)", border: `1px solid ${isProfileLocked ? "rgba(212,175,55,0.2)" : "rgba(212,175,55,0.4)"}`, borderRadius: 10, color: "#D4AF37", fontSize: 16, fontFamily: "inherit", outline: "none", marginBottom: 14, caretColor: "#D4AF37", userSelect: "text", WebkitUserSelect: "text", opacity: isProfileLocked ? 0.7 : 1, cursor: isProfileLocked ? "not-allowed" : "text" }}
             />
 
             {/* Birthday select dropdowns */}
             {(() => {
-              const selSt: React.CSSProperties = { width: "100%", padding: "10px 8px", background: "rgba(0,0,0,0.6)", border: "1px solid rgba(212,175,55,0.45)", borderRadius: 8, color: "#D4AF37", fontSize: 14, fontFamily: "'Noto Serif SC',serif", outline: "none", cursor: "pointer", userSelect: "text", WebkitUserSelect: "text" };
+              const locked = isProfileLocked;
+              const selSt: React.CSSProperties = { width: "100%", padding: "10px 8px", background: locked ? "rgba(0,0,0,0.35)" : "rgba(0,0,0,0.6)", border: `1px solid ${locked ? "rgba(212,175,55,0.2)" : "rgba(212,175,55,0.45)"}`, borderRadius: 8, color: "#D4AF37", fontSize: 14, fontFamily: "'Noto Serif SC',serif", outline: "none", cursor: locked ? "not-allowed" : "pointer", opacity: locked ? 0.7 : 1, userSelect: "text", WebkitUserSelect: "text" };
               const lbSt: React.CSSProperties = { fontSize: 12, color: "#C9A84C", fontWeight: 600, marginBottom: 4, textAlign: "center" };
               return (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {/* Row 1: Year, Month, Day */}
                   <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 8 }}>
                     <div><div style={lbSt}>西元年</div>
-                      <select value={birthday.year} onChange={e => setBirthday(p => ({...p, year: +e.target.value}))} style={selSt} data-testid="sel-year">
+                      <select value={birthday.year} disabled={locked} onChange={e => setBirthday(p => ({...p, year: +e.target.value}))} style={selSt} data-testid="sel-year">
                         {Array.from({length: 77}, (_, i) => 2026 - i).map(y => <option key={y} value={y}>{y}</option>)}
                       </select>
                     </div>
                     <div><div style={lbSt}>月</div>
-                      <select value={birthday.month} onChange={e => setBirthday(p => ({...p, month: +e.target.value}))} style={selSt} data-testid="sel-month">
+                      <select value={birthday.month} disabled={locked} onChange={e => setBirthday(p => ({...p, month: +e.target.value}))} style={selSt} data-testid="sel-month">
                         {Array.from({length: 12}, (_, i) => i + 1).map(m => <option key={m} value={m}>{m}</option>)}
                       </select>
                     </div>
                     <div><div style={lbSt}>日</div>
-                      <select value={birthday.day} onChange={e => setBirthday(p => ({...p, day: +e.target.value}))} style={selSt} data-testid="sel-day">
+                      <select value={birthday.day} disabled={locked} onChange={e => setBirthday(p => ({...p, day: +e.target.value}))} style={selSt} data-testid="sel-day">
                         {Array.from({length: 31}, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}</option>)}
                       </select>
                     </div>
                   </div>
                   {/* Unknown time checkbox */}
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none", WebkitUserSelect: "none", justifyContent: "center" }}>
-                    <input type="checkbox" checked={unknownTime} onChange={e => {
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: locked ? "not-allowed" : "pointer", userSelect: "none", WebkitUserSelect: "none", justifyContent: "center", opacity: locked ? 0.7 : 1 }}>
+                    <input type="checkbox" checked={unknownTime} disabled={locked} onChange={e => {
                       setUnknownTime(e.target.checked);
                       if (e.target.checked) setBirthday(p => ({...p, hour: 12, minute: 0}));
                     }} style={{ accentColor: "#D4AF37", width: 16, height: 16 }} />
-                    <span style={{ fontSize: 13, color: "#C9A84C" }}>🙋 不確定 / 忘記具體出生時間</span>
+                    <span style={{ fontSize: 13, color: "#C9A84C" }}>🙋‍♂️ 我不確定 / 忘記具體出生時間</span>
                   </label>
                   {/* Row 2: Hour, Minute */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, opacity: unknownTime ? 0.4 : 1, transition: "opacity 0.2s" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, opacity: (unknownTime || locked) ? 0.4 : 1, transition: "opacity 0.2s" }}>
                     <div><div style={lbSt}>時（00–23）</div>
-                      <select value={birthday.hour} disabled={unknownTime} onChange={e => setBirthday(p => ({...p, hour: +e.target.value}))} style={selSt} data-testid="sel-hour">
+                      <select value={birthday.hour} disabled={unknownTime || locked} onChange={e => setBirthday(p => ({...p, hour: +e.target.value}))} style={selSt} data-testid="sel-hour">
                         {Array.from({length: 24}, (_, i) => i).map(h => <option key={h} value={h}>{String(h).padStart(2,"0")}</option>)}
                       </select>
                     </div>
                     <div><div style={lbSt}>分（00–59）</div>
-                      <select value={birthday.minute} disabled={unknownTime} onChange={e => setBirthday(p => ({...p, minute: +e.target.value}))} style={selSt} data-testid="sel-minute">
+                      <select value={birthday.minute} disabled={unknownTime || locked} onChange={e => setBirthday(p => ({...p, minute: +e.target.value}))} style={selSt} data-testid="sel-minute">
                         {Array.from({length: 60}, (_, i) => i).map(m => <option key={m} value={m}>{String(m).padStart(2,"0")}</option>)}
                       </select>
                     </div>
                   </div>
                   {unknownTime && (
-                    <div style={{ background: "rgba(212,175,55,0.07)", border: "1px solid rgba(212,175,55,0.25)", borderRadius: 10, padding: "12px 14px", textAlign: "left" }}>
-                      <p style={{ fontSize: 18, color: "#FFF", lineHeight: 1.8, margin: 0 }}>💡 <span style={{ color: "#D4AF37", fontWeight: 700 }}>星穹提示：</span>忘記精確出生時間沒關係。系統將自動以當日中午 12:00 進行基礎推演，部分月亮星座及上升星座結果可能略有偏差，其餘靈魂天機報告不受影響。</p>
+                    <div style={{ background: "rgba(212,175,55,0.07)", border: "1px solid rgba(212,175,55,0.28)", borderRadius: 12, padding: "14px 16px", textAlign: "left" }}>
+                      <p style={{ fontSize: 18, color: "#FFF", lineHeight: 1.8, margin: 0 }}>💡 <span style={{ color: "#D4AF37", fontWeight: 700 }}>星穹提示：</span>忘記精確出生時間沒關係。系統將自動以當日中午 12:00 進行基礎推演。此狀態下，您的太陽星座、五行行星落座依然具備極高的參考價值。但由於黃道各宮位每 4 分鐘就會產生微幅位移，若少了精確的分分秒秒，算出的【上升星座】與【宮位落入】精確度將會大幅降低，且【月亮星座】若剛好處於當日交界點，亦可能產生誤差。其餘引流與塔羅功能不受影響，請依自身情況酌情解鎖。</p>
                     </div>
                   )}
                 </div>
               );
             })()}
 
-            <button onClick={handleUnlock} data-testid="btn-unlock-main"
-              style={{ marginTop: 18, width: "100%", padding: "14px 0", background: "linear-gradient(90deg,#B38728,#FBF5B7)", color: "#000", fontWeight: 700, fontSize: 17, border: "none", borderRadius: 100, cursor: "pointer", boxShadow: "0 0 22px rgba(212,175,55,0.5)", letterSpacing: "0.05em" }}>
-              解鎖星盤
-            </button>
+            {/* Action buttons */}
+            {isProfileLocked ? (
+              <button onClick={handleEditProfile} data-testid="btn-edit-profile"
+                style={{ marginTop: 14, width: "100%", padding: "12px 0", background: "transparent", border: "1px solid rgba(212,175,55,0.5)", color: "#D4AF37", fontWeight: 600, fontSize: 15, borderRadius: 100, cursor: "pointer", letterSpacing: "0.04em" }}>
+                ✏️ 修改資料
+              </button>
+            ) : (
+              <button onClick={handleConfirm} data-testid="btn-unlock-main"
+                style={{ marginTop: 18, width: "100%", padding: "14px 0", background: "linear-gradient(90deg,#B38728,#FBF5B7)", color: "#000", fontWeight: 700, fontSize: 17, border: "none", borderRadius: 100, cursor: "pointer", boxShadow: "0 0 22px rgba(212,175,55,0.5)", letterSpacing: "0.05em" }}>
+                {isUnlocked ? "✦ 重新確認資料" : "解鎖星盤"}
+              </button>
+            )}
           </div>
         </div>
 
@@ -905,8 +988,8 @@ export default function Home() {
                               <span style={{ fontSize: 12, color: "#C9A84C" }}>🙋 對方出生日期不確定</span>
                             </label>
                             {partnerUnknownTime && (
-                              <div style={{ background: "rgba(212,175,55,0.06)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: 10, padding: "10px 12px" }}>
-                                <p style={{ fontSize: 18, color: "#FFF", lineHeight: 1.8, margin: 0 }}>💡 <span style={{ color: "#D4AF37", fontWeight: 700 }}>提示：</span>僅輸入月份即可完成基礎共鳴比對。完整出生日期可讓靈魂頻率計算更精確，如已知請填入。</p>
+                              <div style={{ background: "rgba(212,175,55,0.07)", border: "1px solid rgba(212,175,55,0.28)", borderRadius: 12, padding: "14px 16px" }}>
+                                <p style={{ fontSize: 18, color: "#FFF", lineHeight: 1.8, margin: 0 }}>💡 <span style={{ color: "#D4AF37", fontWeight: 700 }}>星穹提示：</span>不知道心靈伴侶或朋友的精確出生時間？沒關係！系統將自動以當日中午 12:00 進行兩者星軌的重疊推演。在未知精確分秒的情況下，你們之間的太陽與太陽、太陽與五行星座（如火星、金星）的『核心引力、價值觀共鳴度』依然具備高達 85% 以上的參考價值。但請注意，涉及極度客製化的宮位交織以及精確的上升契合度，其計算結果會受到限制。請依據目前的現有資訊安心進行引力解鎖。</p>
                               </div>
                             )}
                           </div>
