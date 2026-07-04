@@ -57,9 +57,9 @@ function saveProfileEntry(nick: string, bd: BirthdayValue, isUnknownTime: boolea
 
 /* ─── Pricing ──────────────────────────────────────────────────── */
 const starTarotPricing = {
-  astroTriangleRatio: 12,
+  astroTriangleRatio: 6,
   tarotDivination: 6,
-  allFivePlanets: 6,
+  allFivePlanets: 12,
   yearlyTotalDestiny: 10,
   birthdayDestiny: 2,
   friendCompatibility: 10,
