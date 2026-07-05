@@ -120,9 +120,37 @@ const DEEP_ANALYSIS: Record<string, string[]> = {
   ],
 };
 
-function deepAnalysis(key: string, month: number, day: number, sign: string): string {
+const PLANET_COLORS: Record<string, string> = {
+  venus:   "#FFB7D5",
+  jupiter: "#4AFF8C",
+  mercury: "#7EC8E3",
+  mars:    "#FF6B4A",
+  saturn:  "#C0C8D8",
+};
+
+const PLANET_TITLES: Record<string, string> = {
+  venus:   "♀ 金星・審美戀愛深析",
+  jupiter: "♃ 木星・幸運機遇深析",
+  mercury: "☿ 水星・思維溝通深析",
+  mars:    "♂ 火星・行動爆發深析",
+  saturn:  "♄ 土星・秩序自律深析",
+};
+
+function deepAnalysisHtml(key: string, month: number, day: number, sign: string): string {
   const pool = DEEP_ANALYSIS[key];
-  return pool[(month * day) % pool.length].replace(/\{\{SIGN\}\}/g, sign);
+  const raw = pool[(month * day) % pool.length].replace(/\{\{SIGN\}\}/g, sign);
+  const newlineIdx = raw.indexOf("\n");
+  const def  = newlineIdx >= 0 ? raw.slice(0, newlineIdx) : raw;
+  const body = newlineIdx >= 0 ? raw.slice(newlineIdx + 1) : "";
+
+  const color = PLANET_COLORS[key] ?? "#D4AF37";
+  const title = PLANET_TITLES[key] ?? "";
+
+  return [
+    `<p style="color:${color};font-weight:700;font-size:13px;letter-spacing:0.08em;margin:0 0 10px;text-shadow:0 0 10px ${color}88;">${title}</p>`,
+    `<p style="color:#FFA94D;font-weight:700;font-size:14px;line-height:1.75;margin:0 0 10px;">${def}</p>`,
+    `<p style="color:#FFFFFF;font-size:14px;line-height:1.75;margin:0;">${body}</p>`,
+  ].join("");
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
@@ -133,7 +161,7 @@ export interface PlanetData {
   domain: string;
   sign: string;       // zodiac sign — always shown for free
   coreText: string;   // one-sentence influence — free
-  analysis: string;   // deep analysis — locked behind 2 pts
+  analysis: string;   // deep analysis HTML — locked behind 2 pts
 }
 
 export function getPlanetDeconstruction(
@@ -145,10 +173,10 @@ export function getPlanetDeconstruction(
   const maSign = planetSign("mars",    year, month, day, hour, minute);
   const sSign  = planetSign("saturn",  year, month, day, hour, minute);
   return [
-    { planet: "金星", element: "♀", domain: "審美戀愛", sign: vSign,  coreText: coreInfluence("venus",   month, day), analysis: deepAnalysis("venus",   month, day, vSign)  },
-    { planet: "木星", element: "♃", domain: "幸運機遇", sign: jSign,  coreText: coreInfluence("jupiter", month, day), analysis: deepAnalysis("jupiter", month, day, jSign)  },
-    { planet: "水星", element: "☿", domain: "思維溝通", sign: meSign, coreText: coreInfluence("mercury", month, day), analysis: deepAnalysis("mercury", month, day, meSign) },
-    { planet: "火星", element: "♂", domain: "行動爆發", sign: maSign, coreText: coreInfluence("mars",    month, day), analysis: deepAnalysis("mars",    month, day, maSign) },
-    { planet: "土星", element: "♄", domain: "秩序自律", sign: sSign,  coreText: coreInfluence("saturn",  month, day), analysis: deepAnalysis("saturn",  month, day, sSign)  },
+    { planet: "金星", element: "♀", domain: "審美戀愛", sign: vSign,  coreText: coreInfluence("venus",   month, day), analysis: deepAnalysisHtml("venus",   month, day, vSign)  },
+    { planet: "木星", element: "♃", domain: "幸運機遇", sign: jSign,  coreText: coreInfluence("jupiter", month, day), analysis: deepAnalysisHtml("jupiter", month, day, jSign)  },
+    { planet: "水星", element: "☿", domain: "思維溝通", sign: meSign, coreText: coreInfluence("mercury", month, day), analysis: deepAnalysisHtml("mercury", month, day, meSign) },
+    { planet: "火星", element: "♂", domain: "行動爆發", sign: maSign, coreText: coreInfluence("mars",    month, day), analysis: deepAnalysisHtml("mars",    month, day, maSign) },
+    { planet: "土星", element: "♄", domain: "秩序自律", sign: sSign,  coreText: coreInfluence("saturn",  month, day), analysis: deepAnalysisHtml("saturn",  month, day, sSign)  },
   ];
 }

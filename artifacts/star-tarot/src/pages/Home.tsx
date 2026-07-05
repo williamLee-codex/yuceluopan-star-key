@@ -661,7 +661,10 @@ export default function Home() {
                             <p style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", lineHeight: 1.75, margin: "8px 0 0", borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 8 }}>{p.coreText}</p>
                             {!!unlockedModules.allFivePlanets && (
                               <div style={{ marginTop: 12, background: "rgba(212,175,55,0.04)", border: "1px solid rgba(212,175,55,0.15)", borderRadius: 10, padding: "12px 14px" }}>
-                                <BodyText style={{ fontSize: 16 }}>{renderNick(p.analysis, nick)}</BodyText>
+                                <div
+                                  style={{ fontFamily: "'Noto Serif SC',serif" }}
+                                  dangerouslySetInnerHTML={{ __html: renderNickHtml(p.analysis, nick) }}
+                                />
                               </div>
                             )}
                           </div>
