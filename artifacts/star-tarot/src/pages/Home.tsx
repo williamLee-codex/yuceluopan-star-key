@@ -624,7 +624,7 @@ export default function Home() {
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, paddingLeft: 4 }}>
                       <GoldTitle size={18}>五行行星落座</GoldTitle>
                       <span style={{ fontSize: 11, color: "#4AFF8C", border: "1px solid rgba(74,255,140,0.35)", padding: "2px 8px", borderRadius: 100 }}>星座免費</span>
-                      <span style={{ fontSize: 11, color: "rgba(212,175,55,0.5)", background: "rgba(212,175,55,0.08)", padding: "2px 8px", borderRadius: 100, border: "1px solid rgba(212,175,55,0.2)" }}>五星全解 6 點</span>
+                      <span style={{ fontSize: 11, color: "rgba(212,175,55,0.5)", background: "rgba(212,175,55,0.08)", padding: "2px 8px", borderRadius: 100, border: "1px solid rgba(212,175,55,0.2)" }}>五星全解 {starTarotPricing.allFivePlanets} 點</span>
                     </div>
                     {/* ── Unlock button at TOP ── */}
                     {!unlockedModules.allFivePlanets && (
