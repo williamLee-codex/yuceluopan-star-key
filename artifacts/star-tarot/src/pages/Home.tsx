@@ -258,6 +258,10 @@ function renderNick(text: string, nick: string): ReactNode[] {
       : [part]
   );
 }
+function renderNickHtml(html: string, nick: string): string {
+  const n = (nick.trim() || "緣主").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return html.replaceAll("{{NAME}}", `<span style="color:#D4AF37;font-weight:700;text-shadow:0 0 8px rgba(212,175,55,0.4);">${n}</span>`);
+}
 function GoldTitle({ children, size = 24 }: { children: ReactNode; size?: number }) {
   return <div style={{ fontSize: size, fontWeight: 700, color: "#D4AF37", textShadow: "0 0 12px rgba(212,175,55,0.6),0 0 24px rgba(212,175,55,0.3)", lineHeight: 1.3, animation: "breathe-gold 3s infinite ease-in-out" }}>{children}</div>;
 }
@@ -615,7 +619,7 @@ export default function Home() {
                           <div style={{ fontSize: 13, color: "#C9A84C", marginBottom: 14 }}>✦ 三主星深層解析已解鎖 ✦</div>
                           <div
                             style={{ fontFamily: "'Noto Serif SC',serif" }}
-                            dangerouslySetInnerHTML={{ __html: renderNick(tripleSign.deepProfile, nick) }}
+                            dangerouslySetInnerHTML={{ __html: renderNickHtml(tripleSign.deepProfile, nick) }}
                           />
                         </div>
                       </MiniLockedSection>
