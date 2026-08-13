@@ -12,22 +12,33 @@ import { getMonthlyForecast, getYearlyOverview, getCareerForecast, getLoveForeca
 import { getSoulmateProfile, getSoulmateCategories, type SoulmateCategory } from "@/lib/soulmate";
 import { getCompatibility } from "@/lib/compatibility";
 import { getMercuryRetrogradeStatus } from "@/lib/mercury";
+import {
+  BIRTHPLACE_COUNTRIES,
+  buildLegacyProfileKey,
+  buildProfileKey,
+  defaultCountryForLocale,
+  findCities,
+  formatBirthplaceLabel,
+  TAIPEI_BIRTHPLACE,
+  type Birthplace,
+} from "@/lib/birthplace";
 
 /* ─── localStorage helpers ──────────────────────────────────────── */
 const LS_UNLOCK_RECORDS = "starTarot_unlockedRecords";
 const LS_PROFILE_INDEX  = "starTarot_profileIndex";
 
-function buildUserKey(nick: string, bd: BirthdayValue): string {
-  return `${nick}_${bd.year}_${bd.month}_${bd.day}_${bd.hour}_${bd.minute}`;
-}
-
-function loadUnlockedModulesForKey(userKey: string): Record<string, boolean> {
+function loadUnlockedModulesForKey(userKey: string, legacyKey?: string): Record<string, boolean> {
   try {
     const records = JSON.parse(localStorage.getItem(LS_UNLOCK_RECORDS) || "{}") as Record<string, Record<string, boolean>>;
     const result: Record<string, boolean> = {};
     for (const mKey of Object.keys(records)) {
       if (records[mKey]?.[userKey]) result[mKey] = true;
+      else if (legacyKey && records[mKey]?.[legacyKey]) {
+        result[mKey] = true;
+        records[mKey][userKey] = true;
+      }
     }
+    localStorage.setItem(LS_UNLOCK_RECORDS, JSON.stringify(records));
     return result;
   } catch { return {}; }
 }
@@ -41,16 +52,16 @@ function saveUnlockRecord(moduleKey: string, userKey: string): void {
   } catch {}
 }
 
-type ProfileEntry = { year: number; month: number; day: number; hour: number; minute: number; isUnknownTime: boolean };
+type ProfileEntry = { year: number; month: number; day: number; hour: number; minute: number; isUnknownTime: boolean; birthplace?: Birthplace };
 
 function getProfileIndex(): Record<string, ProfileEntry> {
   try { return JSON.parse(localStorage.getItem(LS_PROFILE_INDEX) || "{}"); } catch { return {}; }
 }
 
-function saveProfileEntry(nick: string, bd: BirthdayValue, isUnknownTime: boolean): void {
+function saveProfileEntry(nick: string, bd: BirthdayValue, isUnknownTime: boolean, birthplace: Birthplace): void {
   try {
     const idx = getProfileIndex();
-    idx[nick] = { year: bd.year, month: bd.month, day: bd.day, hour: bd.hour, minute: bd.minute, isUnknownTime };
+    idx[nick] = { year: bd.year, month: bd.month, day: bd.day, hour: bd.hour, minute: bd.minute, isUnknownTime, birthplace };
     localStorage.setItem(LS_PROFILE_INDEX, JSON.stringify(idx));
   } catch {}
 }
@@ -349,6 +360,9 @@ export default function Home() {
   const [nicknameInput, setNicknameInput] = useState("");
   const [birthday, setBirthday] = useState<BirthdayValue>({ year: 1990, month: 1, day: 1, hour: 12, minute: 0 });
   const [unknownTime, setUnknownTime] = useState(false);
+  const [countryCode, setCountryCode] = useState(() => defaultCountryForLocale(typeof navigator === "undefined" ? undefined : navigator.language));
+  const [cityQuery, setCityQuery] = useState("");
+  const [birthplace, setBirthplace] = useState<Birthplace | null>(null);
 
   // Profile lock state
   const [confirmedUserKey, setConfirmedUserKey] = useState<string | null>(null);
@@ -402,20 +416,36 @@ export default function Home() {
         const p = idx[val];
         setBirthday({ year: p.year, month: p.month, day: p.day, hour: p.hour, minute: p.minute });
         setUnknownTime(p.isUnknownTime);
+        if (p.birthplace) {
+          setCountryCode(p.birthplace.countryCode);
+          setBirthplace(p.birthplace);
+          setCityQuery(formatBirthplaceLabel(p.birthplace));
+        } else {
+          setBirthplace(null);
+          setCityQuery("");
+        }
+      } else {
+        setBirthplace(null);
+        setCityQuery("");
       }
     }
   };
 
   const handleConfirm = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (!birthplace) {
+      toast({ title: "請先選擇出生城市", description: "請選擇國家並從城市搜尋結果中點選一個城市。", variant: "destructive" });
+      return;
+    }
     const nick = nicknameInput.trim() || "緣主";
-    const key  = buildUserKey(nick, birthday);
+    const key = buildProfileKey(nick, birthday, birthplace.id);
+    const legacyKey = buildLegacyProfileKey(nick, birthday);
     setNickname(nick);
     setConfirmedUserKey(key);
     setIsProfileLocked(true);
-    const saved = loadUnlockedModulesForKey(key);
+    const saved = loadUnlockedModulesForKey(key, legacyKey);
     setUnlockedModules(saved);
-    saveProfileEntry(nick, birthday, unknownTime);
+    saveProfileEntry(nick, birthday, unknownTime, birthplace);
     setIsUnlocked(true);
     setTimeout(() => contentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
   };
@@ -454,7 +484,7 @@ export default function Home() {
   // ── Derived data ─────────────────────────────────────────────────
   const nick           = nickname.trim() || nicknameInput.trim() || "緣主";
   const profile        = getBirthdayProfile(birthday.month, birthday.day);
-  const tripleSign     = getTripleSignProfile(birthday.year, birthday.month, birthday.day, birthday.hour, birthday.minute);
+  const tripleSign     = getTripleSignProfile(birthday.year, birthday.month, birthday.day, birthday.hour, birthday.minute, birthplace ?? TAIPEI_BIRTHPLACE);
   const planets        = getPlanetDeconstruction(birthday.month, birthday.day, birthday.year, birthday.hour, birthday.minute);
   const monthly        = getMonthlyForecast(birthday.month, birthday.day);
   const yearlyOverview = getYearlyOverview();
@@ -499,6 +529,40 @@ export default function Home() {
               maxLength={12} data-testid="input-nickname" disabled={isProfileLocked}
               style={{ width: "100%", boxSizing: "border-box", padding: "12px 16px", background: isProfileLocked ? "rgba(0,0,0,0.35)" : "rgba(0,0,0,0.5)", border: `1px solid ${isProfileLocked ? "rgba(212,175,55,0.2)" : "rgba(212,175,55,0.4)"}`, borderRadius: 10, color: "#D4AF37", fontSize: 16, fontFamily: "inherit", outline: "none", marginBottom: 14, caretColor: "#D4AF37", userSelect: "text", WebkitUserSelect: "text", opacity: isProfileLocked ? 0.7 : 1, cursor: isProfileLocked ? "not-allowed" : "text" }}
             />
+
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 0.85fr) minmax(0, 1.15fr)", gap: 8, marginBottom: 14, textAlign: "left" }}>
+              <label style={{ minWidth: 0 }}>
+                <span style={{ display: "block", fontSize: 12, color: "#C9A84C", fontWeight: 600, marginBottom: 4, textAlign: "center" }}>出生國家</span>
+                <select aria-label="出生國家" value={countryCode} disabled={isProfileLocked} onChange={(e) => {
+                  setCountryCode(e.target.value);
+                  setBirthplace(null);
+                  setCityQuery("");
+                }} style={{ width: "100%", padding: "10px 8px", background: "rgba(0,0,0,0.6)", border: "1px solid rgba(212,175,55,0.45)", borderRadius: 8, color: "#D4AF37", fontSize: 14, fontFamily: "inherit" }}>
+                  {BIRTHPLACE_COUNTRIES.map((country) => <option key={country.code} value={country.code}>{country.name}</option>)}
+                </select>
+              </label>
+              <label style={{ minWidth: 0 }}>
+                <span style={{ display: "block", fontSize: 12, color: "#C9A84C", fontWeight: 600, marginBottom: 4, textAlign: "center" }}>出生城市</span>
+                <input aria-label="搜尋出生城市" value={cityQuery} disabled={isProfileLocked} onChange={(e) => {
+                  setCityQuery(e.target.value);
+                  setBirthplace(null);
+                }} placeholder="輸入城市後選取結果" style={{ width: "100%", boxSizing: "border-box", padding: "10px 10px", background: "rgba(0,0,0,0.6)", border: `1px solid ${birthplace ? "rgba(74,255,140,0.7)" : "rgba(212,175,55,0.45)"}`, borderRadius: 8, color: "#D4AF37", fontSize: 14, fontFamily: "inherit", outline: "none", userSelect: "text", WebkitUserSelect: "text" }} />
+              </label>
+            </div>
+            {!isProfileLocked && cityQuery.trim() && !birthplace && (
+              <div role="listbox" aria-label="出生城市搜尋結果" style={{ maxHeight: 154, overflowY: "auto", marginTop: -8, marginBottom: 14, border: "1px solid rgba(212,175,55,0.28)", borderRadius: 8, background: "rgba(0,0,0,0.72)", textAlign: "left" }}>
+                {findCities(countryCode, cityQuery).map((place) => (
+                  <button key={place.id} type="button" role="option" onClick={() => {
+                    setBirthplace(place);
+                    setCityQuery(formatBirthplaceLabel(place));
+                  }} style={{ display: "block", width: "100%", padding: "10px 12px", border: "none", borderBottom: "1px solid rgba(212,175,55,0.12)", background: "transparent", color: "#FFF", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
+                    {formatBirthplaceLabel(place)}
+                  </button>
+                ))}
+                {findCities(countryCode, cityQuery).length === 0 && <div style={{ padding: "10px 12px", fontSize: 13, color: "rgba(255,255,255,0.55)" }}>找不到相符城市，請調整關鍵字。</div>}
+              </div>
+            )}
+            {birthplace && <p style={{ margin: "-6px 0 14px", fontSize: 12, color: "#7FFFA4" }}>已選擇：{formatBirthplaceLabel(birthplace)} · {birthplace.timeZone}</p>}
 
             {/* Birthday select dropdowns */}
             {(() => {
@@ -609,7 +673,7 @@ export default function Home() {
                         </div>
                       ))}
                     </div>
-                    <div style={{ marginBottom: 8, fontSize: 13, color: "#C9A84C" }}>基礎能量概覽 · 台灣時區演算</div>
+                    <div style={{ marginBottom: 8, fontSize: 13, color: "#C9A84C" }}>基礎能量概覽 · {birthplace ? `${formatBirthplaceLabel(birthplace)} · ${birthplace.timeZone}` : "待選擇出生城市"}</div>
                     <BodyText>{renderNick(tripleSign.basicDescription, nick)}</BodyText>
                     <div style={{ marginTop: 18 }}>
                       <MiniLockedSection moduleKey="astroTriangleRatio" label="解鎖三主星深層交織心理影響與人格面具"
