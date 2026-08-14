@@ -25,7 +25,50 @@ const ZODIAC_SIGNS = [
   { name: "魔羯座", end: [12, 31] }
 ];
 
-/** Julian Day Number — converts Taiwan time (UTC+8) to UT JD */
+export interface AstrologyBirthplace {
+  latitude: number;
+  longitude: number;
+  timeZone: string;
+}
+
+const TAIWAN_BIRTHPLACE: AstrologyBirthplace = {
+  latitude: 25,
+  longitude: 121.5,
+  timeZone: "Asia/Taipei",
+};
+
+function timeZoneOffsetAt(date: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const value = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((part) => part.type === type)?.value);
+  return Date.UTC(value("year"), value("month") - 1, value("day"), value("hour"), value("minute"), value("second")) - date.getTime();
+}
+
+export function localTimeToUtc(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  timeZone: string,
+): Date {
+  const wallTime = Date.UTC(year, month - 1, day, hour, minute);
+  let instant = wallTime;
+  for (let pass = 0; pass < 2; pass += 1) {
+    instant = wallTime - timeZoneOffsetAt(new Date(instant), timeZone);
+  }
+  return new Date(instant);
+}
+
+/** Legacy Julian Day helper — converts Taiwan time (UTC+8) to UT JD. */
 export function julianDay(
   year: number, month: number, day: number,
   hour: number, minute: number, tzOffset = 8
@@ -36,6 +79,13 @@ export function julianDay(
   const A = Math.floor(y / 100);
   const B = 2 - A + Math.floor(A / 4);
   return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + day + utcFrac + B - 1524.5;
+}
+
+function julianDayForBirthplace(
+  year: number, month: number, day: number, hour: number, minute: number, birthplace?: AstrologyBirthplace,
+): number {
+  const place = birthplace ?? TAIWAN_BIRTHPLACE;
+  return localTimeToUtc(year, month, day, hour, minute, place.timeZone).getTime() / 86_400_000 + 2_440_587.5;
 }
 
 export function getZodiac(month: number, day: number): string {
@@ -51,8 +101,8 @@ export function getZodiac(month: number, day: number): string {
  * Moon ecliptic longitude via Meeus simplified algorithm (accurate ±2°, sufficient for sign).
  * Uses Taiwan UTC+8 via julianDay().
  */
-export function getMoonSign(year: number, month: number, day: number, hour = 12, minute = 0): string {
-  const JD = julianDay(year, month, day, hour, minute);
+export function getMoonSign(year: number, month: number, day: number, hour = 12, minute = 0, birthplace?: AstrologyBirthplace): string {
+  const JD = julianDayForBirthplace(year, month, day, hour, minute, birthplace);
   const T = (JD - 2451545.0) / 36525;
   const L0 = 218.3165 + 481267.8813 * T;
   const M  = ((134.9634 + 477198.8676 * T) % 360) * Math.PI / 180;
@@ -70,7 +120,7 @@ export function getMoonSign(year: number, month: number, day: number, hour = 12,
 }
 
 /**
- * Ascendant (Rising Sign) for Taiwan (lat 25°N, lon 121.5°E).
+ * Ascendant (Rising Sign) for the selected birthplace.
  *
  * Algorithm: scan the ecliptic for the degree where the altitude
  * transitions from POSITIVE → NEGATIVE.  That crossing is where the
@@ -83,12 +133,13 @@ export function getMoonSign(year: number, month: number, day: number, hour = 12,
  */
 export function getRisingSign(
   year: number, month: number, day: number,
-  hour = 12, minute = 0
+  hour = 12, minute = 0, birthplace?: AstrologyBirthplace,
 ): string {
-  const lat  = 25.0 * Math.PI / 180;
-  const lon  = 121.5;
+  const place = birthplace ?? TAIWAN_BIRTHPLACE;
+  const lat  = place.latitude * Math.PI / 180;
+  const lon  = place.longitude;
   const eps  = 23.439 * Math.PI / 180;
-  const JD   = julianDay(year, month, day, hour, minute);
+  const JD   = julianDayForBirthplace(year, month, day, hour, minute, place);
   const T    = (JD - 2451545.0) / 36525;
 
   // Greenwich Mean Sidereal Time (degrees)
@@ -214,11 +265,11 @@ export function getBirthdayProfile(month: number, day: number): BirthdayProfile 
 
 /* ─── Triple sign profile ───────────────────────────────────────── */
 export function getTripleSignProfile(
-  year: number, month: number, day: number, hour = 12, minute = 0
+  year: number, month: number, day: number, hour = 12, minute = 0, birthplace?: AstrologyBirthplace,
 ) {
   const sunSign    = getZodiac(month, day);
-  const moonSign   = getMoonSign(year, month, day, hour, minute);
-  const risingSign = getRisingSign(year, month, day, hour, minute);
+  const moonSign   = getMoonSign(year, month, day, hour, minute, birthplace);
+  const risingSign = getRisingSign(year, month, day, hour, minute, birthplace);
 
   const archIdx = (month + day + hour) % ARCHETYPE_FAMILIES.length;
 
