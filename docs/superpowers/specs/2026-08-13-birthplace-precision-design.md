@@ -4,6 +4,20 @@
 
 Require a selected birth city before unlocking the star chart, then use that city's coordinates and IANA time zone to calculate the moon and rising signs.
 
+## Built-In City Search
+
+- Use an embedded, version-controlled city catalogue. It covers all Taiwan counties/cities plus common overseas birth cities, without an external location provider or API key.
+- The preferred country defaults to Taiwan for Chinese browser locales and the United States for other locales. It may be changed to any country or to an unrestricted global search.
+- Queries shorter than two characters return no result. After a short debounce, the UI searches the selected country first and then the built-in global catalogue, returning at most eight results.
+- Each selected result persists an immutable snapshot: catalogue ID, city, region, country code, country name, latitude, longitude and IANA time zone. The selected result label is `city, region (country)`.
+- Existing static city IDs remain readable for old local profiles and are also used for new selections.
+
+## Cost and Privacy
+
+- No location query leaves the browser, and Vercel has no birthplace API key or serverless location endpoint.
+- An explicit catalogue selection is still required; a free-text city name cannot unlock a profile.
+- The catalogue can later be expanded or replaced by a verified central profile source without changing chart calculations.
+
 ## User Flow
 
 - The entry form defaults the country to Taiwan for Chinese locales and the United States for other locales.
