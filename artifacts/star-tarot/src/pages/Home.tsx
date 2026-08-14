@@ -13,15 +13,15 @@ import { getSoulmateProfile, getSoulmateCategories, type SoulmateCategory } from
 import { getCompatibility } from "@/lib/compatibility";
 import { getMercuryRetrogradeStatus } from "@/lib/mercury";
 import {
-  BIRTHPLACE_COUNTRIES,
   buildLegacyProfileKey,
   buildProfileKey,
   defaultCountryForLocale,
-  findCities,
   formatBirthplaceLabel,
+  getBirthplaceCountries,
   TAIPEI_BIRTHPLACE,
   type Birthplace,
 } from "@/lib/birthplace";
+import { searchBirthplaces } from "@/lib/location-search";
 
 /* ─── localStorage helpers ──────────────────────────────────────── */
 const LS_UNLOCK_RECORDS = "starTarot_unlockedRecords";
@@ -360,9 +360,14 @@ export default function Home() {
   const [nicknameInput, setNicknameInput] = useState("");
   const [birthday, setBirthday] = useState<BirthdayValue>({ year: 1990, month: 1, day: 1, hour: 12, minute: 0 });
   const [unknownTime, setUnknownTime] = useState(false);
+  const [locationLanguage] = useState(() => typeof navigator === "undefined" ? "en" : navigator.language);
   const [countryCode, setCountryCode] = useState(() => defaultCountryForLocale(typeof navigator === "undefined" ? undefined : navigator.language));
   const [cityQuery, setCityQuery] = useState("");
   const [birthplace, setBirthplace] = useState<Birthplace | null>(null);
+  const [cityResults, setCityResults] = useState<Birthplace[]>([]);
+  const [isSearchingCity, setIsSearchingCity] = useState(false);
+  const [citySearchError, setCitySearchError] = useState<string | null>(null);
+  const countryOptions = getBirthplaceCountries(locationLanguage);
 
   // Profile lock state
   const [confirmedUserKey, setConfirmedUserKey] = useState<string | null>(null);
@@ -405,6 +410,41 @@ export default function Home() {
       document.removeEventListener("selectstart", preventSelect);
     };
   }, []);
+
+  useEffect(() => {
+    const query = cityQuery.trim();
+
+    if (isProfileLocked || birthplace || query.length < 2) {
+      setCityResults([]);
+      setIsSearchingCity(false);
+      setCitySearchError(null);
+      return;
+    }
+
+    let isCurrent = true;
+    const timer = window.setTimeout(() => {
+      setIsSearchingCity(true);
+      setCitySearchError(null);
+
+      void searchBirthplaces(query, countryCode || undefined, locationLanguage)
+        .then((results) => {
+          if (isCurrent) setCityResults(results);
+        })
+        .catch(() => {
+          if (!isCurrent) return;
+          setCityResults([]);
+          setCitySearchError("出生城市資料暫時無法載入，請稍後再試。");
+        })
+        .finally(() => {
+          if (isCurrent) setIsSearchingCity(false);
+        });
+    }, 300);
+
+    return () => {
+      isCurrent = false;
+      window.clearTimeout(timer);
+    };
+  }, [birthplace, cityQuery, countryCode, isProfileLocked, locationLanguage]);
 
   // ── Handlers ─────────────────────────────────────────────────────
   const handleNicknameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -537,8 +577,11 @@ export default function Home() {
                   setCountryCode(e.target.value);
                   setBirthplace(null);
                   setCityQuery("");
+                  setCityResults([]);
+                  setCitySearchError(null);
                 }} style={{ width: "100%", padding: "10px 8px", background: "rgba(0,0,0,0.6)", border: "1px solid rgba(212,175,55,0.45)", borderRadius: 8, color: "#D4AF37", fontSize: 14, fontFamily: "inherit" }}>
-                  {BIRTHPLACE_COUNTRIES.map((country) => <option key={country.code} value={country.code}>{country.name}</option>)}
+                  <option value="">全球不限</option>
+                  {countryOptions.map((country) => <option key={country.code} value={country.code}>{country.name}</option>)}
                 </select>
               </label>
               <label style={{ minWidth: 0 }}>
@@ -546,12 +589,12 @@ export default function Home() {
                 <input aria-label="搜尋出生城市" value={cityQuery} disabled={isProfileLocked} onChange={(e) => {
                   setCityQuery(e.target.value);
                   setBirthplace(null);
-                }} placeholder="輸入城市後選取結果" style={{ width: "100%", boxSizing: "border-box", padding: "10px 10px", background: "rgba(0,0,0,0.6)", border: `1px solid ${birthplace ? "rgba(74,255,140,0.7)" : "rgba(212,175,55,0.45)"}`, borderRadius: 8, color: "#D4AF37", fontSize: 14, fontFamily: "inherit", outline: "none", userSelect: "text", WebkitUserSelect: "text" }} />
+                }} placeholder="搜尋台灣與常見海外城市" style={{ width: "100%", boxSizing: "border-box", padding: "10px 10px", background: "rgba(0,0,0,0.6)", border: `1px solid ${birthplace ? "rgba(74,255,140,0.7)" : "rgba(212,175,55,0.45)"}`, borderRadius: 8, color: "#D4AF37", fontSize: 14, fontFamily: "inherit", outline: "none", userSelect: "text", WebkitUserSelect: "text" }} />
               </label>
             </div>
-            {!isProfileLocked && cityQuery.trim() && !birthplace && (
+            {!isProfileLocked && cityQuery.trim().length >= 2 && !birthplace && (
               <div role="listbox" aria-label="出生城市搜尋結果" style={{ maxHeight: 154, overflowY: "auto", marginTop: -8, marginBottom: 14, border: "1px solid rgba(212,175,55,0.28)", borderRadius: 8, background: "rgba(0,0,0,0.72)", textAlign: "left" }}>
-                {findCities(countryCode, cityQuery).map((place) => (
+                {cityResults.map((place) => (
                   <button key={place.id} type="button" role="option" onClick={() => {
                     setBirthplace(place);
                     setCityQuery(formatBirthplaceLabel(place));
@@ -559,7 +602,9 @@ export default function Home() {
                     {formatBirthplaceLabel(place)}
                   </button>
                 ))}
-                {findCities(countryCode, cityQuery).length === 0 && <div style={{ padding: "10px 12px", fontSize: 13, color: "rgba(255,255,255,0.55)" }}>找不到相符城市，請調整關鍵字。</div>}
+                {isSearchingCity && <div style={{ padding: "10px 12px", fontSize: 13, color: "rgba(255,255,255,0.55)" }}>正在搜尋城市...</div>}
+                {!isSearchingCity && citySearchError && <div style={{ padding: "10px 12px", fontSize: 13, color: "#FFB4B4" }}>{citySearchError}</div>}
+                {!isSearchingCity && !citySearchError && cityResults.length === 0 && <div style={{ padding: "10px 12px", fontSize: 13, color: "rgba(255,255,255,0.55)" }}>找不到相符城市，請改用完整城市名稱、切換全球不限，或選擇鄰近的大城市。</div>}
               </div>
             )}
             {birthplace && <p style={{ margin: "-6px 0 14px", fontSize: 12, color: "#7FFFA4" }}>已選擇：{formatBirthplaceLabel(birthplace)} · {birthplace.timeZone}</p>}
