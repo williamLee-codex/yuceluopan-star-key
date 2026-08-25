@@ -22,6 +22,7 @@ import {
   type Birthplace,
 } from "@/lib/birthplace";
 import { searchBirthplaces } from "@/lib/location-search";
+import { loadLaunchProfile } from "@/lib/launch-profile";
 
 /* ─── localStorage helpers ──────────────────────────────────────── */
 const LS_UNLOCK_RECORDS = "starTarot_unlockedRecords";
@@ -368,6 +369,26 @@ export default function Home() {
   const [isSearchingCity, setIsSearchingCity] = useState(false);
   const [citySearchError, setCitySearchError] = useState<string | null>(null);
   const countryOptions = getBirthplaceCountries(locationLanguage);
+
+  useEffect(() => {
+    let active = true;
+    void loadLaunchProfile().then((profile) => {
+      if (!active || !profile) return;
+      const date = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(profile.birthDate);
+      if (!date) return;
+      const time = /^(?:[^T]*T)?([0-9]{2}):([0-9]{2})/.exec(profile.birthTime || "");
+      setNicknameInput(profile.displayName || "");
+      setBirthday({ year: +date[1], month: +date[2], day: +date[3], hour: time ? +time[1] : 12, minute: time ? +time[2] : 0 });
+      setUnknownTime(!time);
+      if (profile.birthPlaceId) {
+        const fallback = { ...TAIPEI_BIRTHPLACE, id: profile.birthPlaceId, timeZone: profile.timezone || TAIPEI_BIRTHPLACE.timeZone };
+        setBirthplace(fallback);
+        setCountryCode(fallback.countryCode);
+        setCityQuery(formatBirthplaceLabel(fallback));
+      }
+    });
+    return () => { active = false; };
+  }, []);
 
   // Profile lock state
   const [confirmedUserKey, setConfirmedUserKey] = useState<string | null>(null);
