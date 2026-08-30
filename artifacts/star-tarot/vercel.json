@@ -2,5 +2,5 @@
   "framework": "vite",
   "installCommand": "pnpm install",
   "buildCommand": "PORT=5000 BASE_PATH=/ pnpm run build",
-  "outputDirectory": "dist/public"
+  "outputDirectory": "dist"
 }
