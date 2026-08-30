@@ -614,11 +614,16 @@ export default function Home() {
                 style={{ marginTop: 14, width: "100%", padding: "12px 0", background: "transparent", border: "1px solid rgba(212,175,55,0.5)", color: "#D4AF37", fontWeight: 600, fontSize: 15, borderRadius: 100, cursor: "pointer", letterSpacing: "0.04em" }}>
                 ✏️ 修改資料
               </button>
-            ) : (
+            ) : hasLaunchProfile ? (
               <button onClick={handleConfirm} data-testid="btn-unlock-main"
                 style={{ marginTop: 18, width: "100%", padding: "14px 0", background: "linear-gradient(90deg,#B38728,#FBF5B7)", color: "#000", fontWeight: 700, fontSize: 17, border: "none", borderRadius: 100, cursor: "pointer", boxShadow: "0 0 22px rgba(212,175,55,0.5)", letterSpacing: "0.05em" }}>
                 {isUnlocked ? "✦ 重新確認資料" : "解鎖星盤"}
               </button>
+            ) : (
+              <a href="https://www.yuceluopan.com/create-subject" data-testid="link-create-profile"
+                style={{ display: "block", marginTop: 18, width: "100%", padding: "14px 0", background: "linear-gradient(90deg,#B38728,#FBF5B7)", color: "#000", fontWeight: 700, fontSize: 17, borderRadius: 100, textAlign: "center", textDecoration: "none", boxShadow: "0 0 22px rgba(212,175,55,0.5)", letterSpacing: "0.05em" }}>
+                建立本命資料
+              </a>
             )}
           </div>
         </div>
