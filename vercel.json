@@ -6,5 +6,5 @@
   "rewrites": [
     { "source": "/(.*)", "destination": "/" }
   ],
-  "cleanUrls": true
+  "cleanUrls": false
 }
