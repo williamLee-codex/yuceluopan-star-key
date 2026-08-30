@@ -2,7 +2,7 @@
   "framework": "vite",
   "installCommand": "pnpm install",
   "buildCommand": "pnpm --filter @workspace/star-tarot run build",
-  "outputDirectory": "artifacts/star-tarot/dist/public",
+  "outputDirectory": "artifacts/star-tarot/dist",
   "rewrites": [
     { "source": "/(.*)", "destination": "/" }
   ]
