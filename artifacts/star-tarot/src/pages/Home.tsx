@@ -359,6 +359,8 @@ export default function Home() {
 
   // Input
   const [nicknameInput, setNicknameInput] = useState("");
+  const [hasLaunchProfile, setHasLaunchProfile] = useState(false);
+  const [launchProfileChecked, setLaunchProfileChecked] = useState(false);
   const [birthday, setBirthday] = useState<BirthdayValue>({ year: 1990, month: 1, day: 1, hour: 12, minute: 0 });
   const [unknownTime, setUnknownTime] = useState(false);
   const [locationLanguage] = useState(() => typeof navigator === "undefined" ? "en" : navigator.language);
@@ -373,7 +375,13 @@ export default function Home() {
   useEffect(() => {
     let active = true;
     void loadLaunchProfile().then((profile) => {
-      if (!active || !profile) return;
+      if (!active) return;
+      if (!profile) {
+        setLaunchProfileChecked(true);
+        return;
+      }
+      setHasLaunchProfile(true);
+      setLaunchProfileChecked(true);
       const date = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(profile.birthDate);
       if (!date) return;
       const time = /^(?:[^T]*T)?([0-9]{2}):([0-9]{2})/.exec(profile.birthTime || "");
@@ -582,108 +590,23 @@ export default function Home() {
           <p style={{ fontSize: 15, color: "rgba(255,255,255,0.6)", margin: "6px 0 22px" }}>AI 塔羅與星盤探索</p>
 
           <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: 16, padding: "20px 14px" }}>
-            <p style={{ fontSize: 17, color: "#FFF", marginBottom: 14, lineHeight: 1.7 }}>「請輸入您的生辰軌跡以解鎖密鑰」</p>
-
-            {/* Nickname — with address-book auto-fill */}
-            <input type="text" value={nicknameInput} onChange={handleNicknameChange}
-              placeholder="請輸入您的專屬暱稱（如：緣主、William）"
-              maxLength={12} data-testid="input-nickname" disabled={isProfileLocked}
-              style={{ width: "100%", boxSizing: "border-box", padding: "12px 16px", background: isProfileLocked ? "rgba(0,0,0,0.35)" : "rgba(0,0,0,0.5)", border: `1px solid ${isProfileLocked ? "rgba(212,175,55,0.2)" : "rgba(212,175,55,0.4)"}`, borderRadius: 10, color: "#D4AF37", fontSize: 16, fontFamily: "inherit", outline: "none", marginBottom: 14, caretColor: "#D4AF37", userSelect: "text", WebkitUserSelect: "text", opacity: isProfileLocked ? 0.7 : 1, cursor: isProfileLocked ? "not-allowed" : "text" }}
-            />
-
-            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 0.85fr) minmax(0, 1.15fr)", gap: 8, marginBottom: 14, textAlign: "left" }}>
-              <label style={{ minWidth: 0 }}>
-                <span style={{ display: "block", fontSize: 12, color: "#C9A84C", fontWeight: 600, marginBottom: 4, textAlign: "center" }}>出生國家</span>
-                <select aria-label="出生國家" value={countryCode} disabled={isProfileLocked} onChange={(e) => {
-                  setCountryCode(e.target.value);
-                  setBirthplace(null);
-                  setCityQuery("");
-                  setCityResults([]);
-                  setCitySearchError(null);
-                }} style={{ width: "100%", padding: "10px 8px", background: "rgba(0,0,0,0.6)", border: "1px solid rgba(212,175,55,0.45)", borderRadius: 8, color: "#D4AF37", fontSize: 14, fontFamily: "inherit" }}>
-                  <option value="">全球不限</option>
-                  {countryOptions.map((country) => <option key={country.code} value={country.code}>{country.name}</option>)}
-                </select>
-              </label>
-              <label style={{ minWidth: 0 }}>
-                <span style={{ display: "block", fontSize: 12, color: "#C9A84C", fontWeight: 600, marginBottom: 4, textAlign: "center" }}>出生城市</span>
-                <input aria-label="搜尋出生城市" value={cityQuery} disabled={isProfileLocked} onChange={(e) => {
-                  setCityQuery(e.target.value);
-                  setBirthplace(null);
-                }} placeholder="搜尋台灣與常見海外城市" style={{ width: "100%", boxSizing: "border-box", padding: "10px 10px", background: "rgba(0,0,0,0.6)", border: `1px solid ${birthplace ? "rgba(74,255,140,0.7)" : "rgba(212,175,55,0.45)"}`, borderRadius: 8, color: "#D4AF37", fontSize: 14, fontFamily: "inherit", outline: "none", userSelect: "text", WebkitUserSelect: "text" }} />
-              </label>
-            </div>
-            {!isProfileLocked && cityQuery.trim().length >= 2 && !birthplace && (
-              <div role="listbox" aria-label="出生城市搜尋結果" style={{ maxHeight: 154, overflowY: "auto", marginTop: -8, marginBottom: 14, border: "1px solid rgba(212,175,55,0.28)", borderRadius: 8, background: "rgba(0,0,0,0.72)", textAlign: "left" }}>
-                {cityResults.map((place) => (
-                  <button key={place.id} type="button" role="option" onClick={() => {
-                    setBirthplace(place);
-                    setCityQuery(formatBirthplaceLabel(place));
-                  }} style={{ display: "block", width: "100%", padding: "10px 12px", border: "none", borderBottom: "1px solid rgba(212,175,55,0.12)", background: "transparent", color: "#FFF", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
-                    {formatBirthplaceLabel(place)}
-                  </button>
-                ))}
-                {isSearchingCity && <div style={{ padding: "10px 12px", fontSize: 13, color: "rgba(255,255,255,0.55)" }}>正在搜尋城市...</div>}
-                {!isSearchingCity && citySearchError && <div style={{ padding: "10px 12px", fontSize: 13, color: "#FFB4B4" }}>{citySearchError}</div>}
-                {!isSearchingCity && !citySearchError && cityResults.length === 0 && <div style={{ padding: "10px 12px", fontSize: 13, color: "rgba(255,255,255,0.55)" }}>找不到相符城市，請改用完整城市名稱、切換全球不限，或選擇鄰近的大城市。</div>}
+            {!launchProfileChecked ? (
+              <div style={{ padding: "24px 14px", color: "#C9A84C" }}>正在讀取主程式的本命資料…</div>
+            ) : hasLaunchProfile ? (
+              <div style={{ padding: "18px 14px", background: "rgba(212,175,55,0.06)", border: "1px solid rgba(212,175,55,0.25)", borderRadius: 12, textAlign: "left" }}>
+                <p style={{ fontSize: 16, color: "#D4AF37", fontWeight: 700, marginBottom: 10 }}>已載入御策羅盤本命資料</p>
+                <p style={{ fontSize: 14, color: "rgba(255,255,255,0.72)", lineHeight: 1.8, margin: 0 }}>
+                  {nicknameInput || "緣主"} 的資料已由主程式確認，星穹密鑰不會要求重新輸入出生年月日或出生時間。
+                </p>
+              </div>
+            ) : (
+              <div style={{ padding: "18px 14px", background: "rgba(255,180,120,0.06)", border: "1px solid rgba(255,180,120,0.3)", borderRadius: 12, textAlign: "left" }}>
+                <p style={{ fontSize: 16, color: "#FFD0A8", fontWeight: 700, marginBottom: 10 }}>請從御策羅盤 App 目錄進入</p>
+                <p style={{ fontSize: 14, color: "rgba(255,255,255,0.72)", lineHeight: 1.8, margin: 0 }}>
+                  星穹密鑰不提供獨立輸入出生資料。請返回御策羅盤，先確認本命資料，再由 App 目錄啟動本 App。
+                </p>
               </div>
             )}
-            {birthplace && <p style={{ margin: "-6px 0 14px", fontSize: 12, color: "#7FFFA4" }}>已選擇：{formatBirthplaceLabel(birthplace)} · {birthplace.timeZone}</p>}
-
-            {/* Birthday select dropdowns */}
-            {(() => {
-              const locked = isProfileLocked;
-              const selSt: React.CSSProperties = { width: "100%", padding: "10px 8px", background: locked ? "rgba(0,0,0,0.35)" : "rgba(0,0,0,0.6)", border: `1px solid ${locked ? "rgba(212,175,55,0.2)" : "rgba(212,175,55,0.45)"}`, borderRadius: 8, color: "#D4AF37", fontSize: 14, fontFamily: "'Noto Serif SC',serif", outline: "none", cursor: locked ? "not-allowed" : "pointer", opacity: locked ? 0.7 : 1, userSelect: "text", WebkitUserSelect: "text" };
-              const lbSt: React.CSSProperties = { fontSize: 12, color: "#C9A84C", fontWeight: 600, marginBottom: 4, textAlign: "center" };
-              return (
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {/* Row 1: Year, Month, Day */}
-                  <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 8 }}>
-                    <div><div style={lbSt}>西元年</div>
-                      <select value={birthday.year} disabled={locked} onChange={e => setBirthday(p => ({...p, year: +e.target.value}))} style={selSt} data-testid="sel-year">
-                        {Array.from({length: 77}, (_, i) => 2026 - i).map(y => <option key={y} value={y}>{y}</option>)}
-                      </select>
-                    </div>
-                    <div><div style={lbSt}>月</div>
-                      <select value={birthday.month} disabled={locked} onChange={e => setBirthday(p => ({...p, month: +e.target.value}))} style={selSt} data-testid="sel-month">
-                        {Array.from({length: 12}, (_, i) => i + 1).map(m => <option key={m} value={m}>{m}</option>)}
-                      </select>
-                    </div>
-                    <div><div style={lbSt}>日</div>
-                      <select value={birthday.day} disabled={locked} onChange={e => setBirthday(p => ({...p, day: +e.target.value}))} style={selSt} data-testid="sel-day">
-                        {Array.from({length: 31}, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                  {/* Unknown time checkbox */}
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: locked ? "not-allowed" : "pointer", userSelect: "none", WebkitUserSelect: "none", justifyContent: "center", opacity: locked ? 0.7 : 1 }}>
-                    <input type="checkbox" checked={unknownTime} disabled={locked} onChange={e => {
-                      setUnknownTime(e.target.checked);
-                      if (e.target.checked) setBirthday(p => ({...p, hour: 12, minute: 0}));
-                    }} style={{ accentColor: "#D4AF37", width: 16, height: 16 }} />
-                    <span style={{ fontSize: 13, color: "#C9A84C" }}>🙋‍♂️ 我不確定 / 忘記具體出生時間</span>
-                  </label>
-                  {/* Row 2: Hour, Minute */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, opacity: (unknownTime || locked) ? 0.4 : 1, transition: "opacity 0.2s" }}>
-                    <div><div style={lbSt}>時（00–23）</div>
-                      <select value={birthday.hour} disabled={unknownTime || locked} onChange={e => setBirthday(p => ({...p, hour: +e.target.value}))} style={selSt} data-testid="sel-hour">
-                        {Array.from({length: 24}, (_, i) => i).map(h => <option key={h} value={h}>{String(h).padStart(2,"0")}</option>)}
-                      </select>
-                    </div>
-                    <div><div style={lbSt}>分（00–59）</div>
-                      <select value={birthday.minute} disabled={unknownTime || locked} onChange={e => setBirthday(p => ({...p, minute: +e.target.value}))} style={selSt} data-testid="sel-minute">
-                        {Array.from({length: 60}, (_, i) => i).map(m => <option key={m} value={m}>{String(m).padStart(2,"0")}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                  {unknownTime && (
-                    <div style={{ background: "rgba(212,175,55,0.07)", border: "1px solid rgba(212,175,55,0.28)", borderRadius: 12, padding: "14px 16px", textAlign: "left" }}>
-                      <p style={{ fontSize: 18, color: "#FFF", lineHeight: 1.8, margin: 0 }}>💡 <span style={{ color: "#D4AF37", fontWeight: 700 }}>星穹提示：</span>忘記精確出生時間沒關係。系統將自動以當日中午 12:00 進行基礎推演。此狀態下，您的太陽星座、五行行星落座依然具備極高的參考價值。但由於黃道各宮位每 4 分鐘就會產生微幅位移，若少了精確的分分秒秒，算出的【上升星座】與【宮位落入】精確度將會大幅降低，且【月亮星座】若剛好處於當日交界點，亦可能產生誤差。其餘引流與塔羅功能不受影響，請依自身情況酌情解鎖。</p>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
 
             {/* Action buttons */}
             {isProfileLocked ? (
