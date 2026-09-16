@@ -7,6 +7,20 @@ export type LaunchProfile = {
   timezone: string;
 };
 
+function isLaunchProfile(value: unknown): value is LaunchProfile {
+  if (!value || typeof value !== "object") return false;
+
+  const profile = value as Record<string, unknown>;
+  return (
+    typeof profile.birthDate === "string" &&
+    typeof profile.birthPlaceId === "string" &&
+    typeof profile.birthTime === "string" &&
+    typeof profile.displayName === "string" &&
+    typeof profile.subjectProfileId === "string" &&
+    typeof profile.timezone === "string"
+  );
+}
+
 export async function loadLaunchProfile(): Promise<LaunchProfile | null> {
   if (typeof window === "undefined") return null;
   const token = new URLSearchParams(window.location.search).get("launchToken")?.trim();
@@ -18,8 +32,8 @@ export async function loadLaunchProfile(): Promise<LaunchProfile | null> {
       body: JSON.stringify({ launchToken: token }),
     });
     if (!response.ok) return null;
-    const payload = await response.json() as { activeProfile?: LaunchProfile | null };
-    return payload.activeProfile ?? null;
+    const payload = await response.json() as { activeProfile?: unknown };
+    return isLaunchProfile(payload.activeProfile) ? payload.activeProfile : null;
   } catch {
     return null;
   }
