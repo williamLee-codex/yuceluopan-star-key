@@ -1,4 +1,4 @@
-export default async function handler(req: any, res: any) {
+export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "METHOD_NOT_ALLOWED" });
   const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
   const launchToken = typeof body.launchToken === "string" ? body.launchToken.trim() : "";
@@ -18,3 +18,4 @@ export default async function handler(req: any, res: any) {
     return res.status(502).json({ error: "LAUNCH_VALIDATE_UPSTREAM_UNAVAILABLE" });
   }
 }
+
