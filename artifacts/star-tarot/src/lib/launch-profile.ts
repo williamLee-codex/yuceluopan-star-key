@@ -1,5 +1,16 @@
+export type LaunchBirthPlace = {
+  city: string;
+  countryCode?: string;
+  displayName: string;
+  id: string;
+  latitude: number;
+  longitude: number;
+  timezone: string;
+};
+
 export type LaunchProfile = {
   birthDate: string;
+  birthPlace: LaunchBirthPlace;
   birthPlaceId: string;
   birthTime: string;
   displayName: string;
@@ -7,13 +18,32 @@ export type LaunchProfile = {
   timezone: string;
 };
 
+function isLaunchBirthPlace(value: unknown): value is LaunchBirthPlace {
+  if (!value || typeof value !== "object") return false;
+
+  const birthPlace = value as Record<string, unknown>;
+  return (
+    typeof birthPlace.city === "string" &&
+    (birthPlace.countryCode === undefined || typeof birthPlace.countryCode === "string") &&
+    typeof birthPlace.displayName === "string" &&
+    typeof birthPlace.id === "string" &&
+    typeof birthPlace.latitude === "number" &&
+    Number.isFinite(birthPlace.latitude) &&
+    typeof birthPlace.longitude === "number" &&
+    Number.isFinite(birthPlace.longitude) &&
+    typeof birthPlace.timezone === "string"
+  );
+}
+
 function isLaunchProfile(value: unknown): value is LaunchProfile {
   if (!value || typeof value !== "object") return false;
 
   const profile = value as Record<string, unknown>;
   return (
     typeof profile.birthDate === "string" &&
+    isLaunchBirthPlace(profile.birthPlace) &&
     typeof profile.birthPlaceId === "string" &&
+    profile.birthPlace.id === profile.birthPlaceId &&
     typeof profile.birthTime === "string" &&
     typeof profile.displayName === "string" &&
     typeof profile.subjectProfileId === "string" &&
