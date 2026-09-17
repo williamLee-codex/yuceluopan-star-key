@@ -22,6 +22,7 @@ import {
   type Birthplace,
 } from "@/lib/birthplace";
 import { searchBirthplaces } from "@/lib/location-search";
+import { launchBirthPlaceToBirthplace } from "@/lib/launch-birthplace";
 import { loadLaunchProfile } from "@/lib/launch-profile";
 
 /* ─── localStorage helpers ──────────────────────────────────────── */
@@ -388,12 +389,16 @@ export default function Home() {
       setNicknameInput(profile.displayName || "");
       setBirthday({ year: +date[1], month: +date[2], day: +date[3], hour: time ? +time[1] : 12, minute: time ? +time[2] : 0 });
       setUnknownTime(!time);
-      if (profile.birthPlaceId) {
-        const fallback = { ...TAIPEI_BIRTHPLACE, id: profile.birthPlaceId, timeZone: profile.timezone || TAIPEI_BIRTHPLACE.timeZone };
-        setBirthplace(fallback);
-        setCountryCode(fallback.countryCode);
-        setCityQuery(formatBirthplaceLabel(fallback));
+      const resolvedBirthplace =
+        launchBirthPlaceToBirthplace(profile.birthPlace);
+
+      setBirthplace(resolvedBirthplace);
+
+      if (resolvedBirthplace.countryCode) {
+        setCountryCode(resolvedBirthplace.countryCode);
       }
+
+      setCityQuery(profile.birthPlace.displayName);
     });
     return () => { active = false; };
   }, []);
