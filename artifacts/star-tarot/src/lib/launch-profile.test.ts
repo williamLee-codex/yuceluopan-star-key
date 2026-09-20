@@ -48,7 +48,7 @@ describe("loadLaunchProfile", () => {
     });
   });
 
-  it("returns null when the ready envelope omits required profile fields", async () => {
+  it("accepts a null birth time for an unknown-time profile", async () => {\n    vi.stubGlobal("window", {\n      location: { search: "?launchToken=signed.launch.token" },\n    });\n    vi.stubGlobal("fetch", vi.fn(async () => ({\n      ok: true,\n      json: async () => ({\n        status: "ready",\n        data: {\n          activeProfile: {\n            birthDate: "1973-10-15",\n            birthPlace: launchBirthPlace,\n            birthPlaceId: "place-taipei",\n            birthTime: null,\n            displayName: "William",\n            subjectProfileId: "subject-1",\n            timezone: "Asia/Taipei",\n          },\n        },\n      }),\n    })));\n\n    await expect(loadLaunchProfile()).resolves.toMatchObject({\n      birthTime: null,\n      subjectProfileId: "subject-1",\n    });\n  });\n\n  it("returns null when the ready envelope omits required profile fields", async () => {
     vi.stubGlobal("window", {
       location: { search: "?launchToken=signed.launch.token" },
     });
