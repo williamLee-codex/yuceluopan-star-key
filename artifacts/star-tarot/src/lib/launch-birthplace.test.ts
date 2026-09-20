@@ -2,41 +2,37 @@ import { describe, expect, it } from "vitest";
 import { launchBirthPlaceToBirthplace } from "./launch-birthplace";
 
 describe("launchBirthPlaceToBirthplace", () => {
-  it("preserves the selected ACTIVE profile master-data coordinates and timezone", () => {
-    expect(
+  it("resolves platform birthplace metadata to the local coordinate catalogue", async () => {
+    await expect(
       launchBirthPlaceToBirthplace({
-        city: "Dubai",
-        countryCode: "AE",
-        displayName: "Dubai",
-        id: "place-dubai",
-        latitude: 25.2048,
-        longitude: 55.2708,
-        timezone: "Asia/Dubai",
-      }),
-    ).toEqual({
-      id: "place-dubai",
-      countryCode: "AE",
-      countryName: "AE",
-      city: "Dubai",
-      region: "Dubai",
-      latitude: 25.2048,
-      longitude: 55.2708,
-      timeZone: "Asia/Dubai",
+        city: "台北",
+        countryCode: "TW",
+        displayName: "台北市",
+        id: "place-taipei",
+        timezone: "Asia/Taipei",
+      }, "zh-TW"),
+    ).resolves.toMatchObject({
+      id: "tw-taipei",
+      countryCode: "TW",
+      city: "台北",
+      region: "台北市",
+      latitude: 25.033,
+      longitude: 121.5654,
+      timeZone: "Asia/Taipei",
     });
   });
 
-  it("does not replace non-Taipei coordinates with the Star Key Taipei fallback", () => {
-    const birthplace = launchBirthPlaceToBirthplace({
-      city: "Kinmen",
+  it("does not replace a non-Taipei Taiwan birthplace with the Taipei fallback", async () => {
+    const birthplace = await launchBirthPlaceToBirthplace({
+      city: "金門",
       countryCode: "TW",
-      displayName: "Kinmen（金門）",
+      displayName: "金門縣",
       id: "place-kinmen",
-      latitude: 24.4493,
-      longitude: 118.3767,
       timezone: "Asia/Taipei",
-    });
+    }, "zh-TW");
 
-    expect(birthplace.latitude).toBe(24.4493);
-    expect(birthplace.longitude).toBe(118.3767);
+    expect(birthplace?.id).toBe("tw-kinmen");
+    expect(birthplace?.latitude).toBe(24.4327);
+    expect(birthplace?.longitude).toBe(118.3171);
   });
 });
