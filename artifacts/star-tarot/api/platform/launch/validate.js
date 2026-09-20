@@ -1,21 +1,26 @@
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "METHOD_NOT_ALLOWED" });
+
   const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
   const launchToken = typeof body.launchToken === "string" ? body.launchToken.trim() : "";
   if (!launchToken) return res.status(400).json({ error: "MISSING_LAUNCH_TOKEN" });
-  const coreUrl = process.env.IMPERIAL_COMPASS_CORE_URL?.replace(/\/$/, "");
-  const sharedSecret = process.env.REPLIT_APP_SHARED_SECRET;
-  if (!coreUrl || !sharedSecret) return res.status(503).json({ error: "LAUNCH_VALIDATE_NOT_CONFIGURED" });
+
+  const validationApiUrl = process.env.STAR_KEY_VALIDATION_API_URL?.replace(/\/$/, "")
+    || "https://yuceluopan-star-key-api-server-five.vercel.app";
+
   try {
-    const upstream = await fetch(`${coreUrl}/api/replit/launch/validate`, {
+    const upstream = await fetch(`${validationApiUrl}/api/platform/launch/validate`, {
       method: "POST",
-      headers: { "content-type": "application/json", "x-replit-shared-secret": sharedSecret },
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({ launchToken }),
     });
     const data = await upstream.json().catch(() => ({ error: "INVALID_UPSTREAM_RESPONSE" }));
     return res.status(upstream.status).json(data);
-  } catch {
+  } catch (error) {
+    console.error("STAR_KEY_VALIDATION_API_FETCH_FAILED", {
+      name: error instanceof Error ? error.name : "UnknownError",
+      message: error instanceof Error ? error.message : String(error),
+    });
     return res.status(502).json({ error: "LAUNCH_VALIDATE_UPSTREAM_UNAVAILABLE" });
   }
 }
-
