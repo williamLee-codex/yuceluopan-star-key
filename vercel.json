@@ -4,7 +4,7 @@
   "buildCommand": "pnpm --filter @workspace/star-tarot run build",
   "outputDirectory": "artifacts/star-tarot/dist",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
+    { "source": "/((?!api/).*)", "destination": "/" }
   ],
   "cleanUrls": false
 }
