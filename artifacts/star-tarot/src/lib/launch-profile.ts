@@ -3,6 +3,8 @@ export type LaunchBirthPlace = {
   countryCode?: string;
   displayName: string;
   id: string;
+  latitude: number;
+  longitude: number;
   timezone: string;
 };
 
@@ -25,6 +27,10 @@ function isLaunchBirthPlace(value: unknown): value is LaunchBirthPlace {
     (birthPlace.countryCode === undefined || typeof birthPlace.countryCode === "string") &&
     typeof birthPlace.displayName === "string" &&
     typeof birthPlace.id === "string" &&
+    typeof birthPlace.latitude === "number" &&
+    Number.isFinite(birthPlace.latitude) &&
+    typeof birthPlace.longitude === "number" &&
+    Number.isFinite(birthPlace.longitude) &&
     typeof birthPlace.timezone === "string"
   );
 }
