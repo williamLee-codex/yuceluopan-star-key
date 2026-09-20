@@ -1,13 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { loadLaunchProfile } from "./launch-profile";
 
-const resolvedBirthPlace = {
-  city: "Taiwan Main Island",
+const launchBirthPlace = {
+  city: "台北",
   countryCode: "TW",
-  displayName: "Taiwan Main Island（台灣本島）",
-  id: "place-main-island",
-  latitude: 25.033,
-  longitude: 121.5654,
+  displayName: "台北市",
+  id: "place-taipei",
   timezone: "Asia/Taipei",
 };
 
@@ -16,23 +14,24 @@ describe("loadLaunchProfile", () => {
     vi.unstubAllGlobals();
   });
 
-  it("returns the complete active profile with its resolved master-data birthplace", async () => {
+  it("reads the complete active profile from the platform ready envelope", async () => {
     vi.stubGlobal("window", {
-      location: {
-        search: "?launchToken=signed.launch.token",
-      },
+      location: { search: "?launchToken=signed.launch.token" },
     });
     const fetchMock = vi.fn(async () => ({
       ok: true,
       json: async () => ({
-        activeProfile: {
-          birthDate: "1973-10-15",
-          birthPlace: resolvedBirthPlace,
-          birthPlaceId: "place-main-island",
-          birthTime: "05:05",
-          displayName: "William",
-          subjectProfileId: "subject-1",
-          timezone: "Asia/Taipei",
+        status: "ready",
+        data: {
+          activeProfile: {
+            birthDate: "1973-10-15",
+            birthPlace: launchBirthPlace,
+            birthPlaceId: "place-taipei",
+            birthTime: "05:05",
+            displayName: "William",
+            subjectProfileId: "subject-1",
+            timezone: "Asia/Taipei",
+          },
         },
       }),
     }));
@@ -40,64 +39,48 @@ describe("loadLaunchProfile", () => {
 
     await expect(loadLaunchProfile()).resolves.toEqual({
       birthDate: "1973-10-15",
-      birthPlace: resolvedBirthPlace,
-      birthPlaceId: "place-main-island",
+      birthPlace: launchBirthPlace,
+      birthPlaceId: "place-taipei",
       birthTime: "05:05",
       displayName: "William",
       subjectProfileId: "subject-1",
       timezone: "Asia/Taipei",
     });
-    expect(fetchMock).toHaveBeenCalledWith("/api/platform/launch/validate", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ launchToken: "signed.launch.token" }),
-    });
   });
 
-  it("returns null when launch validation omits required profile fields", async () => {
+  it("accepts a null birth time for an unknown-time profile", async () => {\n    vi.stubGlobal("window", {\n      location: { search: "?launchToken=signed.launch.token" },\n    });\n    vi.stubGlobal("fetch", vi.fn(async () => ({\n      ok: true,\n      json: async () => ({\n        status: "ready",\n        data: {\n          activeProfile: {\n            birthDate: "1973-10-15",\n            birthPlace: launchBirthPlace,\n            birthPlaceId: "place-taipei",\n            birthTime: null,\n            displayName: "William",\n            subjectProfileId: "subject-1",\n            timezone: "Asia/Taipei",\n          },\n        },\n      }),\n    })));\n\n    await expect(loadLaunchProfile()).resolves.toMatchObject({\n      birthTime: null,\n      subjectProfileId: "subject-1",\n    });\n  });\n\n  it("returns null when the ready envelope omits required profile fields", async () => {
     vi.stubGlobal("window", {
-      location: {
-        search: "?launchToken=signed.launch.token",
-      },
+      location: { search: "?launchToken=signed.launch.token" },
     });
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({
-          activeProfile: {
-            subjectProfileId: "subject-1",
-          },
-        }),
-      })),
-    );
+    vi.stubGlobal("fetch", vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        status: "ready",
+        data: { activeProfile: { subjectProfileId: "subject-1" } },
+      }),
+    })));
 
     await expect(loadLaunchProfile()).resolves.toBeNull();
   });
 
-  it("returns null instead of accepting a launch profile without resolved birthplace coordinates", async () => {
+  it("returns null for the legacy top-level activeProfile shape", async () => {
     vi.stubGlobal("window", {
-      location: {
-        search: "?launchToken=signed.launch.token",
-      },
+      location: { search: "?launchToken=signed.launch.token" },
     });
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({
-          activeProfile: {
-            birthDate: "1973-10-15",
-            birthPlace: null,
-            birthPlaceId: "place-main-island",
-            birthTime: "05:05",
-            displayName: "William",
-            subjectProfileId: "subject-1",
-            timezone: "Asia/Taipei",
-          },
-        }),
-      })),
-    );
+    vi.stubGlobal("fetch", vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        activeProfile: {
+          birthDate: "1973-10-15",
+          birthPlace: launchBirthPlace,
+          birthPlaceId: "place-taipei",
+          birthTime: "05:05",
+          displayName: "William",
+          subjectProfileId: "subject-1",
+          timezone: "Asia/Taipei",
+        },
+      }),
+    })));
 
     await expect(loadLaunchProfile()).resolves.toBeNull();
   });

@@ -3,8 +3,6 @@ export type LaunchBirthPlace = {
   countryCode?: string;
   displayName: string;
   id: string;
-  latitude: number;
-  longitude: number;
   timezone: string;
 };
 
@@ -12,7 +10,7 @@ export type LaunchProfile = {
   birthDate: string;
   birthPlace: LaunchBirthPlace;
   birthPlaceId: string;
-  birthTime: string;
+  birthTime: string | null;
   displayName: string;
   subjectProfileId: string;
   timezone: string;
@@ -27,10 +25,6 @@ function isLaunchBirthPlace(value: unknown): value is LaunchBirthPlace {
     (birthPlace.countryCode === undefined || typeof birthPlace.countryCode === "string") &&
     typeof birthPlace.displayName === "string" &&
     typeof birthPlace.id === "string" &&
-    typeof birthPlace.latitude === "number" &&
-    Number.isFinite(birthPlace.latitude) &&
-    typeof birthPlace.longitude === "number" &&
-    Number.isFinite(birthPlace.longitude) &&
     typeof birthPlace.timezone === "string"
   );
 }
@@ -44,7 +38,7 @@ function isLaunchProfile(value: unknown): value is LaunchProfile {
     isLaunchBirthPlace(profile.birthPlace) &&
     typeof profile.birthPlaceId === "string" &&
     profile.birthPlace.id === profile.birthPlaceId &&
-    typeof profile.birthTime === "string" &&
+    (profile.birthTime === null || typeof profile.birthTime === "string") &&
     typeof profile.displayName === "string" &&
     typeof profile.subjectProfileId === "string" &&
     typeof profile.timezone === "string"
@@ -62,8 +56,13 @@ export async function loadLaunchProfile(): Promise<LaunchProfile | null> {
       body: JSON.stringify({ launchToken: token }),
     });
     if (!response.ok) return null;
-    const payload = await response.json() as { activeProfile?: unknown };
-    return isLaunchProfile(payload.activeProfile) ? payload.activeProfile : null;
+    const payload = await response.json() as {
+      data?: { activeProfile?: unknown };
+      status?: unknown;
+    };
+    return payload.status === "ready" && isLaunchProfile(payload.data?.activeProfile)
+      ? payload.data.activeProfile
+      : null;
   } catch {
     return null;
   }
