@@ -81,11 +81,17 @@ export async function loadLaunchProfile(): Promise<LaunchProfile | null> {
     });
     if (!response.ok) return null;
     const payload = await response.json() as {
-      data?: { activeProfile?: unknown };
+      activeProfile?: unknown;
+      data?: { activeProfile?: unknown; data?: { activeProfile?: unknown }; status?: unknown };
       status?: unknown;
     };
-    if (payload.status !== "ready") return null;
-    return normalizeLaunchProfile(payload.data?.activeProfile);
+    const status = payload.status ?? payload.data?.status;
+    if (status !== "ready") return null;
+    return normalizeLaunchProfile(
+      payload.data?.activeProfile ??
+      payload.data?.data?.activeProfile ??
+      payload.activeProfile,
+    );
   } catch {
     return null;
   }
