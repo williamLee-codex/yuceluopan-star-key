@@ -24,7 +24,11 @@ export default async function handler(req: any, res: any) {
     });
     const data = await upstream.json().catch(() => ({ error: "INVALID_UPSTREAM_RESPONSE" }));
     return res.status(upstream.status).json(data);
-  } catch {
+  } catch (error) {
+    const safeError = error instanceof Error
+      ? { name: error.name, message: error.message, cause: String((error as any).cause?.code ?? "") }
+      : { name: "UnknownError", message: String(error), cause: "" };
+    console.error("STAR_KEY_LAUNCH_UPSTREAM_FETCH_FAILED", safeError);
     return res.status(502).json({ error: "LAUNCH_VALIDATE_UPSTREAM_UNAVAILABLE" });
   }
 }
