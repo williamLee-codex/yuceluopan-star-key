@@ -86,7 +86,7 @@ export async function loadLaunchProfile(): Promise<LaunchProfile | null> {
       status?: unknown;
     };
     const status = payload.status ?? payload.data?.status;
-    if (status !== "ready") return null;
+    if (status !== undefined && status !== "ready") return null;
     return normalizeLaunchProfile(
       payload.data?.activeProfile ??
       payload.data?.data?.activeProfile ??
