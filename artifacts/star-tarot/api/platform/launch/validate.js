@@ -15,6 +15,16 @@ export default async function handler(req, res) {
       body: JSON.stringify({ launchToken }),
     });
     const data = await upstream.json().catch(() => ({ error: "INVALID_UPSTREAM_RESPONSE" }));
+    const profile = data?.data?.activeProfile ?? data?.activeProfile ?? null;
+    console.log("STAR_KEY_LAUNCH_SHAPE", {
+      upstreamStatus: upstream.status,
+      responseStatus: data?.status ?? null,
+      hasProfile: Boolean(profile),
+      profileKeys: profile && typeof profile === "object" ? Object.keys(profile).sort() : [],
+      birthPlaceKeys: profile?.birthPlace && typeof profile.birthPlace === "object" ? Object.keys(profile.birthPlace).sort() : [],
+      latitudeType: typeof profile?.birthPlace?.latitude,
+      longitudeType: typeof profile?.birthPlace?.longitude,
+    });
     return res.status(upstream.status).json(data);
   } catch (error) {
     console.error("STAR_KEY_VALIDATION_API_FETCH_FAILED", {
