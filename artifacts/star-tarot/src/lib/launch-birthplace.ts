@@ -1,45 +1,36 @@
 import type { Birthplace } from "./birthplace";
-import { searchBirthplaces } from "./location-search";
 import type { LaunchBirthPlace } from "./launch-profile";
 
-function normalized(value: string | undefined): string {
-  return (value ?? "").trim().toLocaleLowerCase();
-}
+function countryName(countryCode: string | undefined, language: string): string {
+  if (!countryCode) return "";
+  if (countryCode === "TW") return "台灣";
 
-function textMatches(candidate: Birthplace, birthPlace: LaunchBirthPlace): boolean {
-  const expected = new Set(
-    [birthPlace.city, birthPlace.displayName]
-      .map(normalized)
-      .filter(Boolean),
-  );
-  const actual = [candidate.city, candidate.region].map(normalized);
-  return actual.some((value) => expected.has(value));
+  try {
+    return new Intl.DisplayNames([language], { type: "region" }).of(countryCode) ?? countryCode;
+  } catch {
+    return countryCode;
+  }
 }
 
 export async function launchBirthPlaceToBirthplace(
   birthPlace: LaunchBirthPlace,
   language = "en",
 ): Promise<Birthplace | null> {
-  const matches = await searchBirthplaces(
-    birthPlace.city,
-    birthPlace.countryCode,
-    language,
-  );
+  if (
+    !Number.isFinite(birthPlace.latitude) ||
+    !Number.isFinite(birthPlace.longitude)
+  ) {
+    return null;
+  }
 
-  const countryMatches = birthPlace.countryCode
-    ? matches.filter(
-        (candidate) =>
-          normalized(candidate.countryCode) === normalized(birthPlace.countryCode),
-      )
-    : matches;
-
-  return (
-    countryMatches.find(
-      (candidate) =>
-        candidate.timeZone === birthPlace.timezone &&
-        textMatches(candidate, birthPlace),
-    ) ??
-    countryMatches.find((candidate) => textMatches(candidate, birthPlace)) ??
-    null
-  );
+  return {
+    id: birthPlace.id,
+    countryCode: birthPlace.countryCode ?? "",
+    countryName: countryName(birthPlace.countryCode, language),
+    city: birthPlace.city,
+    region: birthPlace.displayName,
+    latitude: birthPlace.latitude,
+    longitude: birthPlace.longitude,
+    timeZone: birthPlace.timezone,
+  };
 }
