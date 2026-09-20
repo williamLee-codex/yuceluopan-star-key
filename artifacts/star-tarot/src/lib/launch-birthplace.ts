@@ -1,17 +1,25 @@
 import type { Birthplace } from "./birthplace";
+import { searchBirthplaces } from "./location-search";
 import type { LaunchBirthPlace } from "./launch-profile";
 
-export function launchBirthPlaceToBirthplace(birthPlace: LaunchBirthPlace): Birthplace {
-  const countryCode = birthPlace.countryCode ?? "";
+export async function launchBirthPlaceToBirthplace(
+  birthPlace: LaunchBirthPlace,
+  language = "en",
+): Promise<Birthplace | null> {
+  const matches = await searchBirthplaces(
+    birthPlace.city,
+    birthPlace.countryCode,
+    language,
+  );
 
-  return {
-    id: birthPlace.id,
-    countryCode,
-    countryName: countryCode,
-    city: birthPlace.city,
-    region: birthPlace.displayName,
-    latitude: birthPlace.latitude,
-    longitude: birthPlace.longitude,
-    timeZone: birthPlace.timezone,
-  };
+  return (
+    matches.find(
+      (candidate) =>
+        candidate.timeZone === birthPlace.timezone &&
+        (candidate.region === birthPlace.displayName || candidate.id === birthPlace.id),
+    ) ??
+    matches.find((candidate) => candidate.timeZone === birthPlace.timezone) ??
+    matches[0] ??
+    null
+  );
 }
