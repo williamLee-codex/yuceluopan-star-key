@@ -18,37 +18,55 @@ export type LaunchProfile = {
   timezone: string;
 };
 
-function isLaunchBirthPlace(value: unknown): value is LaunchBirthPlace {
-  if (!value || typeof value !== "object") return false;
-
-  const birthPlace = value as Record<string, unknown>;
-  return (
-    typeof birthPlace.city === "string" &&
-    (birthPlace.countryCode === undefined || typeof birthPlace.countryCode === "string") &&
-    typeof birthPlace.displayName === "string" &&
-    typeof birthPlace.id === "string" &&
-    typeof birthPlace.latitude === "number" &&
-    Number.isFinite(birthPlace.latitude) &&
-    typeof birthPlace.longitude === "number" &&
-    Number.isFinite(birthPlace.longitude) &&
-    typeof birthPlace.timezone === "string"
-  );
+function normalizeCoordinate(value: unknown): number | null {
+  const coordinate = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+  return Number.isFinite(coordinate) ? coordinate : null;
 }
 
-function isLaunchProfile(value: unknown): value is LaunchProfile {
-  if (!value || typeof value !== "object") return false;
+function normalizeLaunchProfile(value: unknown): LaunchProfile | null {
+  if (!value || typeof value !== "object") return null;
 
   const profile = value as Record<string, unknown>;
-  return (
-    typeof profile.birthDate === "string" &&
-    isLaunchBirthPlace(profile.birthPlace) &&
-    typeof profile.birthPlaceId === "string" &&
-    profile.birthPlace.id === profile.birthPlaceId &&
-    (profile.birthTime === null || typeof profile.birthTime === "string") &&
-    typeof profile.displayName === "string" &&
-    typeof profile.subjectProfileId === "string" &&
-    typeof profile.timezone === "string"
-  );
+  const place = profile.birthPlace;
+  if (!place || typeof place !== "object") return null;
+  const birthPlace = place as Record<string, unknown>;
+  const latitude = normalizeCoordinate(birthPlace.latitude);
+  const longitude = normalizeCoordinate(birthPlace.longitude);
+
+  if (
+    typeof profile.birthDate !== "string" ||
+    typeof profile.birthPlaceId !== "string" ||
+    (profile.birthTime !== null && typeof profile.birthTime !== "string") ||
+    typeof profile.displayName !== "string" ||
+    typeof profile.subjectProfileId !== "string" ||
+    typeof profile.timezone !== "string" ||
+    typeof birthPlace.city !== "string" ||
+    (birthPlace.countryCode !== undefined && typeof birthPlace.countryCode !== "string") ||
+    typeof birthPlace.displayName !== "string" ||
+    typeof birthPlace.id !== "string" ||
+    birthPlace.id !== profile.birthPlaceId ||
+    latitude === null ||
+    longitude === null ||
+    typeof birthPlace.timezone !== "string"
+  ) return null;
+
+  return {
+    birthDate: profile.birthDate,
+    birthPlace: {
+      city: birthPlace.city,
+      ...(typeof birthPlace.countryCode === "string" ? { countryCode: birthPlace.countryCode } : {}),
+      displayName: birthPlace.displayName,
+      id: birthPlace.id,
+      latitude,
+      longitude,
+      timezone: birthPlace.timezone,
+    },
+    birthPlaceId: profile.birthPlaceId,
+    birthTime: profile.birthTime as string | null,
+    displayName: profile.displayName,
+    subjectProfileId: profile.subjectProfileId,
+    timezone: profile.timezone,
+  };
 }
 
 export async function loadLaunchProfile(): Promise<LaunchProfile | null> {
@@ -66,9 +84,8 @@ export async function loadLaunchProfile(): Promise<LaunchProfile | null> {
       data?: { activeProfile?: unknown };
       status?: unknown;
     };
-    return payload.status === "ready" && isLaunchProfile(payload.data?.activeProfile)
-      ? payload.data.activeProfile
-      : null;
+    if (payload.status !== "ready") return null;
+    return normalizeLaunchProfile(payload.data?.activeProfile);
   } catch {
     return null;
   }
