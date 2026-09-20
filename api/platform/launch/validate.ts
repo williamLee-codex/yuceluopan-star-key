@@ -28,7 +28,7 @@ export default async function handler(req: any, res: any) {
     const safeError = error instanceof Error
       ? { name: error.name, message: error.message, cause: String((error as any).cause?.code ?? "") }
       : { name: "UnknownError", message: String(error), cause: "" };
-    console.error("STAR_KEY_LAUNCH_UPSTREAM_FETCH_FAILED", safeError);
+    (globalThis as any).console?.error?.("STAR_KEY_LAUNCH_UPSTREAM_FETCH_FAILED", safeError);
     return res.status(502).json({ error: "LAUNCH_VALIDATE_UPSTREAM_UNAVAILABLE" });
   }
 }
