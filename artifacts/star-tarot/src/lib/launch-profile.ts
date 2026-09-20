@@ -10,7 +10,7 @@ export type LaunchProfile = {
   birthDate: string;
   birthPlace: LaunchBirthPlace;
   birthPlaceId: string;
-  birthTime: string;
+  birthTime: string | null;
   displayName: string;
   subjectProfileId: string;
   timezone: string;
@@ -38,7 +38,7 @@ function isLaunchProfile(value: unknown): value is LaunchProfile {
     isLaunchBirthPlace(profile.birthPlace) &&
     typeof profile.birthPlaceId === "string" &&
     profile.birthPlace.id === profile.birthPlaceId &&
-    typeof profile.birthTime === "string" &&
+    (profile.birthTime === null || typeof profile.birthTime === "string") &&
     typeof profile.displayName === "string" &&
     typeof profile.subjectProfileId === "string" &&
     typeof profile.timezone === "string"
