@@ -375,7 +375,7 @@ export default function Home() {
 
   useEffect(() => {
     let active = true;
-    void loadLaunchProfile().then((profile) => {
+    void loadLaunchProfile().then(async (profile) => {
       if (!active) return;
       if (!profile) {
         setLaunchProfileChecked(true);
@@ -389,12 +389,15 @@ export default function Home() {
       setNicknameInput(profile.displayName || "");
       setBirthday({ year: +date[1], month: +date[2], day: +date[3], hour: time ? +time[1] : 12, minute: time ? +time[2] : 0 });
       setUnknownTime(!time);
-      const resolvedBirthplace =
-        launchBirthPlaceToBirthplace(profile.birthPlace);
+      const resolvedBirthplace = await launchBirthPlaceToBirthplace(
+        profile.birthPlace,
+        locationLanguage,
+      );
+      if (!active) return;
 
       setBirthplace(resolvedBirthplace);
 
-      if (resolvedBirthplace.countryCode) {
+      if (resolvedBirthplace?.countryCode) {
         setCountryCode(resolvedBirthplace.countryCode);
       }
 
