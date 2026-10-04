@@ -282,7 +282,7 @@ function BodyText({ children, style }: { children: ReactNode; style?: React.CSSP
   return <p style={{ fontSize: 18, color: "#FFFFFF", lineHeight: 1.8, margin: 0, ...style }}>{children}</p>;
 }
 function SectionCard({ children, style }: { children: ReactNode; style?: React.CSSProperties }) {
-  return <div style={{ background: "linear-gradient(160deg,#111 0%,#0a0a0a 100%)", border: "1px solid rgba(212,175,55,0.25)", borderRadius: 16, padding: "22px 18px", marginBottom: 14, ...style }}>{children}</div>;
+  return <div className="sk-section-card" style={{ background: "linear-gradient(160deg,#111 0%,#0a0a0a 100%)", border: "1px solid rgba(212,175,55,0.25)", borderRadius: 16, padding: "22px 18px", marginBottom: 14, ...style }}>{children}</div>;
 }
 function FreeTag() {
   return <span style={{ fontSize: 11, color: "rgba(74,255,140,0.75)", border: "1px solid rgba(74,255,140,0.35)", padding: "2px 8px", borderRadius: 100 }}>免費</span>;
@@ -581,7 +581,7 @@ export default function Home() {
   /* ═══════════════════ RENDER ════════════════════════════════════ */
   return (
     <ErrorBoundary>
-      <div style={{ minHeight: "100dvh", background: "#0D0D0D", color: "#FFF", fontFamily: "'Noto Serif SC',serif", paddingBottom: isUnlocked ? 84 : 32, userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}>
+      <div className="sk-app" style={{ minHeight: "100dvh", background: "#0D0D0D", color: "#FFF", fontFamily: "'Noto Serif SC',serif", paddingBottom: isUnlocked ? 84 : 32, userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}>
 
         {/* ── Top bar — single gold capsule ───────────────────────── */}
         <div style={{ position: "fixed", top: 12, right: 12, zIndex: 200 }}>
@@ -592,10 +592,10 @@ export default function Home() {
         </div>
 
         {/* ── Input section ───────────────────────────────────────── */}
-        <div style={{ padding: "40px 18px 20px", textAlign: "center" }}>
+        <header className="sk-hero" style={{ padding: "40px 18px 20px", textAlign: "center" }}>
           <AnimatedAstrolabe timeInteracting={timeInteracting} />
           <GoldTitle size={28}>星穹密鑰</GoldTitle>
-          <p style={{ fontSize: 15, color: "rgba(255,255,255,0.6)", margin: "6px 0 22px" }}>AI 塔羅與星盤探索</p>
+          <p style={{ fontSize: 15, color: "rgba(255,255,255,0.6)", margin: "6px 0 22px" }}>西洋占星・觀勢</p>
 
           <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: 16, padding: "20px 14px" }}>
             {!launchProfileChecked ? (
@@ -634,7 +634,24 @@ export default function Home() {
               </a>
             )}
           </div>
-        </div>
+        </header>
+
+        {/* Function navigation */}
+        {isUnlocked && (
+          <nav className="sk-tabs" aria-label="星穹密鑰功能">
+            {TABS.map(tab => {
+              const active = activeTab === tab.id;
+              return (
+                <button key={tab.id} className={active ? "is-active" : undefined} aria-current={active ? "page" : undefined} onClick={e => { e.preventDefault(); handleTabSwitch(tab.id); }} data-testid={`tab-${tab.id}`}
+                  style={{ flex: 1, padding: "10px 0 13px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "transparent", border: "none", cursor: "pointer", color: active ? "#D4AF37" : "rgba(255,255,255,0.35)", transition: "all 0.2s", borderTop: active ? "2px solid #D4AF37" : "2px solid transparent" }}>
+                  <span style={{ fontSize: 17, lineHeight: 1, textShadow: active ? "0 0 10px rgba(212,175,55,0.7)" : "none" }}>{tab.glyph}</span>
+                  <span style={{ fontSize: 10, fontWeight: active ? 700 : 400, letterSpacing: "0.03em" }}>{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        )}
+
 
         {/* ── Scroll anchor ────────────────────────────────────────── */}
         <div ref={contentRef} />
@@ -642,7 +659,7 @@ export default function Home() {
         {/* ── Tab content ─────────────────────────────────────────── */}
         <AnimatePresence>
           {isUnlocked && (
-            <motion.div initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} style={{ padding: "0 14px" }}>
+            <motion.div className="sk-content" initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} style={{ padding: "0 14px" }}>
 
               {/* ════ TAB 1: 星穹天機 ════ */}
               {activeTab === "tianguo" && (
@@ -1115,22 +1132,6 @@ export default function Home() {
             💡 本模組之星盤推演與塔羅矩陣，均基於 AI 大數據心理學模型與符號學演算法，內容僅供個人自我理解、生活風格靈感與高科技娛樂體驗之參考，不構成任何實質醫療、法律或財務建議。
           </p>
         </footer>
-
-        {/* ── 4-Tab bottom bar ─────────────────────────────────────── */}
-        {isUnlocked && (
-          <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, background: "rgba(5,5,5,0.97)", backdropFilter: "blur(16px)", borderTop: "1px solid rgba(212,175,55,0.18)", display: "flex", zIndex: 100 }}>
-            {TABS.map(tab => {
-              const active = activeTab === tab.id;
-              return (
-                <button key={tab.id} onClick={e => { e.preventDefault(); handleTabSwitch(tab.id); }} data-testid={`tab-${tab.id}`}
-                  style={{ flex: 1, padding: "10px 0 13px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "transparent", border: "none", cursor: "pointer", color: active ? "#D4AF37" : "rgba(255,255,255,0.35)", transition: "all 0.2s", borderTop: active ? "2px solid #D4AF37" : "2px solid transparent" }}>
-                  <span style={{ fontSize: 17, lineHeight: 1, textShadow: active ? "0 0 10px rgba(212,175,55,0.7)" : "none" }}>{tab.glyph}</span>
-                  <span style={{ fontSize: 10, fontWeight: active ? 700 : 400, letterSpacing: "0.03em" }}>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
 
         <TopupModal open={showTopup} onOpenChange={setShowTopup} />
         {confirmModal && <UnlockConfirmModal modal={confirmModal} onConfirm={confirmUnlock} onClose={() => setConfirmModal(null)} />}

@@ -24,8 +24,8 @@ function App() {
       <PointsProvider>
         <NicknameProvider>
           <TooltipProvider>
-            <div className="min-h-[100dvh] bg-[#0D0D0D] dark w-full flex justify-center overflow-x-hidden">
-              <div className="w-full max-w-[430px] bg-[#0D0D0D] min-h-screen relative shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+            <div className="star-key-root dark">
+              <div className="star-key-shell">
                 <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
                   <Router />
                 </WouterRouter>
