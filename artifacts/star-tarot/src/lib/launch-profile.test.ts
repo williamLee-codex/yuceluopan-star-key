@@ -7,6 +7,8 @@ const launchBirthPlace = {
   displayName: "台北市",
   id: "place-taipei",
   timezone: "Asia/Taipei",
+  latitude: 25.033,
+  longitude: 121.5654,
 };
 
 describe("loadLaunchProfile", () => {
@@ -48,7 +50,35 @@ describe("loadLaunchProfile", () => {
     });
   });
 
-  it("accepts a null birth time for an unknown-time profile", async () => {\n    vi.stubGlobal("window", {\n      location: { search: "?launchToken=signed.launch.token" },\n    });\n    vi.stubGlobal("fetch", vi.fn(async () => ({\n      ok: true,\n      json: async () => ({\n        status: "ready",\n        data: {\n          activeProfile: {\n            birthDate: "1973-10-15",\n            birthPlace: launchBirthPlace,\n            birthPlaceId: "place-taipei",\n            birthTime: null,\n            displayName: "William",\n            subjectProfileId: "subject-1",\n            timezone: "Asia/Taipei",\n          },\n        },\n      }),\n    })));\n\n    await expect(loadLaunchProfile()).resolves.toMatchObject({\n      birthTime: null,\n      subjectProfileId: "subject-1",\n    });\n  });\n\n  it("returns null when the ready envelope omits required profile fields", async () => {
+  it("accepts a null birth time for an unknown-time profile", async () => {
+    vi.stubGlobal("window", {
+      location: { search: "?launchToken=signed.launch.token" },
+    });
+    vi.stubGlobal("fetch", vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        status: "ready",
+        data: {
+          activeProfile: {
+            birthDate: "1973-10-15",
+            birthPlace: launchBirthPlace,
+            birthPlaceId: "place-taipei",
+            birthTime: null,
+            displayName: "William",
+            subjectProfileId: "subject-1",
+            timezone: "Asia/Taipei",
+          },
+        },
+      }),
+    })));
+
+    await expect(loadLaunchProfile()).resolves.toMatchObject({
+      birthTime: null,
+      subjectProfileId: "subject-1",
+    });
+  });
+
+  it("returns null when the ready envelope omits required profile fields", async () => {
     vi.stubGlobal("window", {
       location: { search: "?launchToken=signed.launch.token" },
     });
@@ -63,7 +93,7 @@ describe("loadLaunchProfile", () => {
     await expect(loadLaunchProfile()).resolves.toBeNull();
   });
 
-  it("returns null for the legacy top-level activeProfile shape", async () => {
+  it("accepts the validated top-level activeProfile shape", async () => {
     vi.stubGlobal("window", {
       location: { search: "?launchToken=signed.launch.token" },
     });
@@ -82,6 +112,6 @@ describe("loadLaunchProfile", () => {
       }),
     })));
 
-    await expect(loadLaunchProfile()).resolves.toBeNull();
+    await expect(loadLaunchProfile()).resolves.toMatchObject({ subjectProfileId: "subject-1", birthPlace: launchBirthPlace });
   });
 });
