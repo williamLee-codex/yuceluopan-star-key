@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect, ReactNode, Component } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect, ReactNode, Component } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock } from "lucide-react";
 import type { BirthdayValue } from "@/components/BirthdayWheels";
@@ -6,7 +6,7 @@ import { TopupModal } from "@/components/TopupModal";
 import { usePoints } from "@/contexts/PointsContext";
 import { useNickname } from "@/contexts/NicknameContext";
 import { useToast } from "@/hooks/use-toast";
-import { getBirthdayProfile, getTripleSignProfile, getBirthdayDestinyReport } from "@/lib/astrology";
+import { getBirthdayProfile, getTripleSignProfile, getBirthdayDestinyReport, getDateDestinyReport } from "@/lib/astrology";
 import { getPlanetDeconstruction } from "@/lib/planets";
 import { getMonthlyForecast, getYearlyOverview, getCareerForecast, getLoveForecast, getWealthForecast } from "@/lib/forecast";
 import { getSoulmateProfile, getSoulmateCategories, type SoulmateCategory } from "@/lib/soulmate";
@@ -24,6 +24,10 @@ import {
 import { searchBirthplaces } from "@/lib/location-search";
 import { launchBirthPlaceToBirthplace } from "@/lib/launch-birthplace";
 import { loadLaunchProfile } from "@/lib/launch-profile";
+
+import { calculateNatalChart } from '@/lib/natal/engine';
+import { buildNatalReadingFacts } from '@/lib/natal/reading-adapter';
+import { NatalChart } from '@/components/NatalChart';
 
 /* ─── localStorage helpers ──────────────────────────────────────── */
 const LS_UNLOCK_RECORDS = "starTarot_unlockedRecords";
@@ -560,9 +564,12 @@ export default function Home() {
 
   // ── Derived data ─────────────────────────────────────────────────
   const nick           = nickname.trim() || nicknameInput.trim() || "緣主";
-  const profile        = getBirthdayProfile(birthday.month, birthday.day);
-  const tripleSign     = getTripleSignProfile(birthday.year, birthday.month, birthday.day, birthday.hour, birthday.minute, birthplace ?? TAIPEI_BIRTHPLACE);
-  const planets        = getPlanetDeconstruction(birthday.month, birthday.day, birthday.year, birthday.hour, birthday.minute);
+  const natal = useMemo(() => birthplace ? calculateNatalChart({birthDate:`${String(birthday.year).padStart(4,'0')}-${String(birthday.month).padStart(2,'0')}-${String(birthday.day).padStart(2,'0')}`,birthTime:unknownTime ? null : `${String(birthday.hour).padStart(2,'0')}:${String(birthday.minute).padStart(2,'0')}`,timeZone:birthplace.timeZone,latitude:birthplace.latitude,longitude:birthplace.longitude}) : {status:'invalid-input' as const,reason:'missing-birthplace'}, [birthday.year,birthday.month,birthday.day,birthday.hour,birthday.minute,unknownTime,birthplace]);
+  const facts = useMemo(() => buildNatalReadingFacts(natal), [natal]);
+  const hasExactPlanets = natal.status === 'ready' || natal.status === 'houses-unavailable';
+  const profile        = getBirthdayProfile(birthday.month, birthday.day, facts.signs.sun);
+  const tripleSign = hasExactPlanets ? getTripleSignProfile(birthday.year,birthday.month,birthday.day,birthday.hour,birthday.minute,birthplace ?? undefined,{sun:facts.signs.sun!,moon:facts.signs.moon!,rising:facts.risingSign ?? '未能確定'}) : {sunSign:facts.signs.sun ?? '未能確定',moonSign:facts.signs.moon ?? '未能確定',risingSign:'未能確定',basicDescription:'出生時間未知，無法確定上升與三主星交織。',deepProfile:''};
+  const planets = hasExactPlanets ? getPlanetDeconstruction(birthday.month,birthday.day,birthday.year,birthday.hour,birthday.minute,facts.signs as Record<'venus'|'jupiter'|'mercury'|'mars'|'saturn',string>) : [];
   const monthly        = getMonthlyForecast(birthday.month, birthday.day);
   const yearlyOverview = getYearlyOverview();
   const careerForecast = getCareerForecast(birthday.year, birthday.month, birthday.day);
@@ -570,7 +577,7 @@ export default function Home() {
   const wealthForecast = getWealthForecast(birthday.year, birthday.month, birthday.day);
   const soulmateCategories = getSoulmateCategories();
   const mercury        = getMercuryRetrogradeStatus();
-  const destinyReport  = getBirthdayDestinyReport(birthday.year, birthday.month, birthday.day, birthday.hour, birthday.minute);
+  const destinyReport = hasExactPlanets ? getBirthdayDestinyReport(birthday.year,birthday.month,birthday.day,birthday.hour,birthday.minute,{sun:facts.signs.sun!,moon:facts.signs.moon!}) : {sunText:'出生時間未確定，暫不提供單一星座推論。',moonText:'月亮可能跨星座，請以本命星盤所列範圍為準。',...getDateDestinyReport(birthday.year,birthday.month,birthday.day)};
 
   // 3-card tarot spread seeded by birthday (past / present / future)
   const tarotSeed  = (birthday.year % 100) * 13 + birthday.month * 7 + birthday.day * 3;
@@ -664,6 +671,8 @@ export default function Home() {
               {/* ════ TAB 1: 星穹天機 ════ */}
               {activeTab === "tianguo" && (
                 <div>
+                  <NatalChart chart={natal} />
+                  {hasExactPlanets && <>
                   {/* Soul archetype — free */}
                   <SectionCard>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
@@ -674,6 +683,7 @@ export default function Home() {
                     <BodyText>{renderNick(profile.profile, nick)}</BodyText>
                   </SectionCard>
 
+                  {facts.canReadTriangle && <>
                   {/* Triple signs — FREE */}
                   <SectionCard>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
@@ -709,6 +719,7 @@ export default function Home() {
                     </div>
                   </SectionCard>
 
+                  </>}
                   {/* Planets — sign + core text FREE, deep analysis 6pts (all 5 bundled) */}
                   <div style={{ marginBottom: 14 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, paddingLeft: 4 }}>
@@ -756,6 +767,7 @@ export default function Home() {
                     </div>
                   </div>
 
+                  </>}
                 </div>
               )}
 

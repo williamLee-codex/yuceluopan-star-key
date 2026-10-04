@@ -1,0 +1,4 @@
+import {it,expect} from 'vitest';import {calculateNatalChart} from './engine';import {buildNatalReadingFacts,SIGN_NAMES} from './reading-adapter';
+const b={birthDate:'2024-01-15',birthTime:'20:00',timeZone:'Asia/Taipei',latitude:25.033,longitude:121.5654};
+it('uses calculated longitude for every reading sign',()=>{const c=calculateNatalChart(b),f=buildNatalReadingFacts(c);if(c.status==='ready'){for(const p of c.planets)expect(f.signs[p.id]).toBe(SIGN_NAMES[p.signIndex]);expect(f.risingSign).toBe(SIGN_NAMES[Math.floor(c.houses.asc/30)])}});
+it('omits rising inference for an unknown time',()=>{const f=buildNatalReadingFacts(calculateNatalChart({...b,birthTime:null,birthDate:'2024-01-16'}));expect(f.risingSign).toBeNull();expect(f.signs.moon).toContain('／');expect(f.canReadTriangle).toBe(false)});

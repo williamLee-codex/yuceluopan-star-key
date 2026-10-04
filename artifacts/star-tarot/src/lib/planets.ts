@@ -165,13 +165,13 @@ export interface PlanetData {
 }
 
 export function getPlanetDeconstruction(
-  month: number, day: number, year = 1990, hour = 12, minute = 0
+  month: number, day: number, year = 1990, hour = 12, minute = 0, actualSigns?: Record<"venus"|"jupiter"|"mercury"|"mars"|"saturn",string>
 ): PlanetData[] {
-  const vSign  = planetSign("venus",   year, month, day, hour, minute);
-  const jSign  = planetSign("jupiter", year, month, day, hour, minute);
-  const meSign = planetSign("mercury", year, month, day, hour, minute);
-  const maSign = planetSign("mars",    year, month, day, hour, minute);
-  const sSign  = planetSign("saturn",  year, month, day, hour, minute);
+  const vSign  = actualSigns?.venus ?? planetSign("venus",   year, month, day, hour, minute);
+  const jSign  = actualSigns?.jupiter ?? planetSign("jupiter", year, month, day, hour, minute);
+  const meSign = actualSigns?.mercury ?? planetSign("mercury", year, month, day, hour, minute);
+  const maSign = actualSigns?.mars ?? planetSign("mars",    year, month, day, hour, minute);
+  const sSign  = actualSigns?.saturn ?? planetSign("saturn",  year, month, day, hour, minute);
   return [
     { planet: "金星", element: "♀", domain: "審美戀愛", sign: vSign,  coreText: coreInfluence("venus",   month, day), analysis: deepAnalysisHtml("venus",   month, day, vSign)  },
     { planet: "木星", element: "♃", domain: "幸運機遇", sign: jSign,  coreText: coreInfluence("jupiter", month, day), analysis: deepAnalysisHtml("jupiter", month, day, jSign)  },

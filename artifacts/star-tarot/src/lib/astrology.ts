@@ -258,18 +258,18 @@ const PROFILES: Record<string, BirthdayProfile> = {
   },
 };
 
-export function getBirthdayProfile(month: number, day: number): BirthdayProfile {
-  const zodiac = getZodiac(month, day);
+export function getBirthdayProfile(month: number, day: number, actualSun?: string): BirthdayProfile {
+  const zodiac = actualSun ?? getZodiac(month, day);
   return PROFILES[zodiac] ?? PROFILES["天秤座"];
 }
 
 /* ─── Triple sign profile ───────────────────────────────────────── */
 export function getTripleSignProfile(
-  year: number, month: number, day: number, hour = 12, minute = 0, birthplace?: AstrologyBirthplace,
+  year: number, month: number, day: number, hour = 12, minute = 0, birthplace?: AstrologyBirthplace, actualSigns?: {sun:string;moon:string;rising:string},
 ) {
-  const sunSign    = getZodiac(month, day);
-  const moonSign   = getMoonSign(year, month, day, hour, minute, birthplace);
-  const risingSign = getRisingSign(year, month, day, hour, minute, birthplace);
+  const sunSign    = actualSigns?.sun ?? getZodiac(month, day);
+  const moonSign   = actualSigns?.moon ?? getMoonSign(year, month, day, hour, minute, birthplace);
+  const risingSign = actualSigns?.rising ?? getRisingSign(year, month, day, hour, minute, birthplace);
 
   const archIdx = (month + day + hour) % ARCHETYPE_FAMILIES.length;
 
@@ -368,16 +368,20 @@ export function getLifePathNumber(year: number, month: number, day: number): num
   return sum;
 }
 
+export function getDateDestinyReport(year: number, month: number, day: number) {
+  const lifePathNum = getLifePathNumber(year, month, day);
+  return {lifePathNum, lifePathText: LIFE_PATH_DESC[lifePathNum] ?? LIFE_PATH_DESC[9]};
+}
+
 export function getBirthdayDestinyReport(
-  year: number, month: number, day: number, hour = 12, minute = 0
+  year: number, month: number, day: number, hour = 12, minute = 0, actualSigns?: {sun:string;moon:string}
 ): { sunText: string; moonText: string; lifePathText: string; lifePathNum: number } {
-  const sunSign  = getZodiac(month, day);
-  const moonSign = getMoonSign(year, month, day, hour, minute);
-  const lpNum    = getLifePathNumber(year, month, day);
+  const sunSign  = actualSigns?.sun ?? getZodiac(month, day);
+  const moonSign = actualSigns?.moon ?? getMoonSign(year, month, day, hour, minute);
+  const dateReport = getDateDestinyReport(year, month, day);
   return {
     sunText: SUN_DESTINY[sunSign] ?? SUN_DESTINY["天秤座"],
     moonText: MOON_DESTINY[moonSign] ?? MOON_DESTINY["天秤座"],
-    lifePathText: LIFE_PATH_DESC[lpNum] ?? LIFE_PATH_DESC[9],
-    lifePathNum: lpNum,
+    ...dateReport,
   };
 }

@@ -1,0 +1,5 @@
+import React from 'react';import {renderToStaticMarkup} from 'react-dom/server';import {it,expect} from 'vitest';import {NatalChart} from './NatalChart';import {calculateNatalChart} from '@/lib/natal/engine';
+const input={birthDate:'2024-01-15',birthTime:'20:00',timeZone:'Asia/Taipei',latitude:25.033,longitude:121.5654};
+it('renders real planet angles and twelve house selection controls',()=>{const c=calculateNatalChart(input);const html=renderToStaticMarkup(<NatalChart chart={c}/>);expect(html).toContain('本命星盤');expect(html).toContain('Placidus');if(c.status==='ready')for(const p of c.planets)expect(html).toContain('data-longitude="'+p.longitude+'"');expect(html).toContain('選擇第12宮')});
+it('does not render fake angles or ASC for unknown time',()=>{const html=renderToStaticMarkup(<NatalChart chart={calculateNatalChart({...input,birthTime:null})}/>);expect(html).toContain('出生時間未知');expect(html).not.toContain('data-longitude');expect(html).not.toContain('選擇第1宮')});
+it('provides readable invalid input state',()=>expect(renderToStaticMarkup(<NatalChart chart={{status:'invalid-input',reason:'invalid-date'}}/>)).toContain('無法建立星盤'));
