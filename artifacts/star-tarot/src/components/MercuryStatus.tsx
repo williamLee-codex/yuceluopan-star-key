@@ -6,7 +6,7 @@ export function MercuryStatus() {
   return (
     <div className="rounded-xl border border-primary/30 bg-gradient-to-br from-[#111] to-black p-6 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xl text-primary font-bold">實時天象防禦</h3>
+        <h3 className="text-xl text-primary font-bold">溝通與行程提醒</h3>
         <span className={`px-3 py-1 rounded-full text-sm font-bold shadow-[0_0_10px_currentColor] ${isRetrograde ? 'text-destructive border border-destructive' : 'text-green-500 border border-green-500'}`}>
           {statusLabel}
         </span>

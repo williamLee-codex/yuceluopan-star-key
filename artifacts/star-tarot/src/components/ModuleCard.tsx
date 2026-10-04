@@ -24,7 +24,7 @@ export function ModuleCard({ title, cost, isUnlocked, onUnlock, children, blurPr
   const handleUnlockRequest = () => {
     if (points < cost) {
       toast({
-        title: "點數不足，請先充值。",
+        title: "點數不足。",
         variant: "destructive",
       });
       return;

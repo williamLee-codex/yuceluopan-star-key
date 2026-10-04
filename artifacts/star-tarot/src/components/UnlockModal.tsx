@@ -12,9 +12,9 @@ export function UnlockModal({ open, onOpenChange, cost, onConfirm }: UnlockModal
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-[#080808] border border-primary/50 text-white max-w-[340px] rounded-xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl text-center gold-glow mb-4">確認解鎖天機？</DialogTitle>
+          <DialogTitle className="text-2xl text-center gold-glow mb-4">確認解鎖這份報告？</DialogTitle>
           <DialogDescription className="text-lg text-white/90 text-center leading-relaxed">
-            本項解析將消耗 {cost} 點，解鎖後您可無限次重複觀看此生日之報告。
+            這份報告需使用 {cost} 點，解鎖後可再次閱讀這份生日報告。
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3 mt-4">
