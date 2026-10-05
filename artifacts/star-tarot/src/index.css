@@ -282,3 +282,30 @@ textarea,
   -webkit-user-select: text !important;
   -webkit-touch-callout: default !important;
 }
+
+/* Celestial temple layout: keep reading and navigation in normal document flow. */
+.star-key-root { min-height:100dvh; width:100%; background:#070e20; }
+.star-key-shell { width:100%; min-height:100dvh; position:relative; }
+.sk-app { background:linear-gradient(#070e2026,#070e2059),url('/images/star-key/body-desktop.png') center top / 100% auto repeat-y !important; color:#f2e6cd !important; padding-bottom:32px !important; }
+.sk-hero { width:min(1240px,calc(100% - 40px)); margin:auto; min-height:340px; padding:64px 48px 36px !important; border:1px solid #d8b97955; border-radius:0 0 22px 22px; background:linear-gradient(#070e2033,#070e2099),url('/images/star-key/hero-desktop.png') center / cover no-repeat; }
+.sk-hero > div:last-child { max-width:620px; margin:20px auto 0; background:#0b1428c9 !important; }
+.sk-tabs { position:relative !important; left:auto !important; bottom:auto !important; transform:none !important; width:min(1240px,calc(100% - 40px)) !important; max-width:none !important; margin:20px auto 0; display:flex; padding:8px; gap:6px; flex-wrap:wrap; background:#101b32df !important; border:1px solid #d8b97955; border-radius:16px; z-index:2 !important; }
+.sk-tabs button { min-height:52px; border-radius:10px; padding:10px 14px !important; color:#ddc698 !important; }
+.sk-tabs button span:last-child { font-size:17px !important; }
+.sk-tabs button:focus-visible { outline:2px solid #ffe7a3; outline-offset:3px; }
+.sk-tabs button.is-active { background:#d4af371c !important; color:#ffe7a3 !important; }
+.sk-content { width:min(1240px,calc(100% - 40px)); margin:0 auto; padding:28px 0 !important; }
+.sk-section-card { background:#0d1830df !important; border-color:#d8b97955 !important; padding:26px !important; box-shadow:0 18px 50px #03081740; }
+.sk-content p { overflow-wrap:break-word; }
+.sk-app footer { max-width:1000px; margin:auto; padding:24px 20px 40px !important; }
+.sk-app footer p { color:#c0b99f !important; font-size:15px !important; }
+@media(max-width:900px) {
+ .sk-app { background-image:linear-gradient(#070e2026,#070e2059),url('/images/star-key/body-mobile.png') !important; }
+ .sk-hero { width:calc(100% - 24px); min-height:420px; padding:48px 18px 28px !important; background-image:linear-gradient(#070e2026,#070e2099),url('/images/star-key/hero-mobile.png'); background-position:center 28%; }
+ .sk-tabs { width:calc(100% - 24px) !important; gap:4px; }
+ .sk-tabs button { flex:1 1 95px !important; }
+ .sk-tabs button span:last-child { font-size:16px !important; }
+ .sk-content { width:calc(100% - 24px); padding-top:20px !important; }
+ .sk-section-card { padding:22px 18px !important; }
+}
+@media(prefers-reduced-motion:reduce) { .gold-glow-animated { animation:none; } }

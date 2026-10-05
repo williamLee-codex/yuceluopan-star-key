@@ -56,15 +56,14 @@ export function TopupModal({ open, onOpenChange }: TopupModalProps) {
           {/* Block A: Important announcement */}
           <div style={{ marginTop: 18, padding: "14px 14px", borderRadius: 12, background: "rgba(212,175,55,0.07)", border: "1px solid rgba(212,175,55,0.3)" }}>
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", lineHeight: 1.75, margin: 0 }}>
-              🌟 <span style={{ color: "#D4AF37", fontWeight: 700 }}>星穹重要公告：</span>本平台的能量點數為全站所有神祕學應用（包含本星盤密鑰、即將上線之大師級紫微斗數、流年運勢天書及未來擴充模組）全面跨平台通用、帳戶點數永久共享。一次充值，全面解鎖專屬天機。
-            </p>
+              🌟 <span style={{ color: "#D4AF37", fontWeight: 700 }}>點數使用說明：</span>目前星穹密鑰的點數與解鎖紀錄，只會保留在目前使用的瀏覽器中，尚未與御策羅盤帳戶共用。</p>
           </div>
 
           {promoSuccess ? (
             <div style={{ margin: "18px 0 0", padding: "18px 16px", borderRadius: 14, background: "rgba(212,175,55,0.12)", border: "1px solid rgba(212,175,55,0.7)", textAlign: "center", boxShadow: "0 0 24px rgba(212,175,55,0.25),inset 0 0 20px rgba(212,175,55,0.05)" }}>
               <div style={{ fontSize: 22, marginBottom: 8 }}>✦</div>
               <p style={{ fontSize: 16, fontWeight: 700, color: "#D4AF37", lineHeight: 1.7, textShadow: "0 0 10px rgba(212,175,55,0.5)" }}>
-                【威廉特權】後臺測試模式啟動，<br />已注入 500 點測試點數！
+                兌換成功，<br />已加入 500 點。
               </p>
               <button onClick={handleClose} style={{ marginTop: 14, padding: "10px 28px", background: "transparent", border: "1px solid rgba(212,175,55,0.4)", borderRadius: 10, color: "#D4AF37", fontSize: 14, cursor: "pointer" }}>
                 關閉
@@ -103,7 +102,7 @@ export function TopupModal({ open, onOpenChange }: TopupModalProps) {
               {/* Block C: External link — no pricing shown */}
               <button onClick={handleTopupLink} data-testid="btn-external-topup"
                 style={{ width: "100%", padding: "16px 0", borderRadius: 14, background: "linear-gradient(90deg,#B38728,#FBF5B7)", color: "#000", fontWeight: 700, fontSize: 16, border: "none", cursor: "pointer", boxShadow: "0 0 20px rgba(212,175,55,0.4)", letterSpacing: "0.05em", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                🔗 前往官方安全儲值
+                🔗 查看儲值頁面
               </button>
             </>
           )}
