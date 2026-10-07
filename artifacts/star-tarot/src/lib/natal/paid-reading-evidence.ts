@@ -128,3 +128,38 @@ export function buildRelationshipReading(
 
   return `${SCENE[domain]}\n\n為什麼你會這樣？${cause}。\n\n${interaction}${usefulLegacy ? `\n\n放回日常相處：${usefulLegacy}。` : ""}`;
 }
+
+
+export function buildDecisionReading(facts: ReadingFacts): string {
+  const evidence = selectPaidReadingEvidence(facts, "decision");
+  if (!evidence.length) return "";
+  const tensions = findEvidenceTensions(evidence);
+  const contrast = tensions.find((x) => x.kind === "contrasting");
+  const [sun, mercury, mars, saturn, rising] = evidence;
+  const opening = `你做重要決定時，不只是「想不想」而已。${sun ? `${sun.label}在${sun.sign}牽動你想成為什麼樣的人` : ""}${mercury ? `；${mercury.label}在${mercury.sign}影響你怎麼比較資訊` : ""}${mars ? `；${mars.label}在${mars.sign}則決定你最後怎麼出手` : ""}。`;
+  const tension = contrast
+    ? `所以你有時會出現一個很真實的內在對話：「我其實已經想好了，為什麼到了要答應的那一刻又停住？」因為${contrast.first.label}代表的${contrast.first.role}，和${contrast.second.label}代表的${contrast.second.role}正在要求不同的東西。這不是優柔寡斷，而是你需要讓兩種條件都被看見。`
+    : "這幾個位置的方向沒有形成明顯對拉時，你通常比較容易把想法轉成決定；真正需要留意的是，不要把其中一個因素當成全部。";
+  const outer = rising ? `別人先看到的，常是上升${rising.sign}的反應方式；那不一定等於你心裡最後的答案。` : "";
+  const boundary = saturn ? `土星在${saturn.sign}則提醒你，真正讓決定變得沉重的地方，常和責任、限制或「做了之後要承擔什麼」有關。` : "";
+  return `${opening}\n\n${tension}\n\n${outer}${boundary}`;
+}
+
+export function buildHabitReading(facts: ReadingFacts): string {
+  const evidence = selectPaidReadingEvidence(facts, "habits");
+  if (!evidence.length) return "";
+  const tensions = findEvidenceTensions(evidence);
+  const contrast = tensions.find((x) => x.kind === "contrasting");
+  const [moon, mercury, venus, mars, saturn] = evidence;
+  const parts = [
+    moon && `${moon.label}在${moon.sign}：你累了、沒安全感或需要恢復時，較容易回到這種情緒節奏`,
+    mercury && `${mercury.label}在${mercury.sign}：影響你每天吸收資訊、說話與整理事情的方法`,
+    venus && `${venus.label}在${venus.sign}：反映你自然覺得舒服、喜歡與值得投入的生活質感`,
+    mars && `${mars.label}在${mars.sign}：事情真的要動起來時，你較本能的行動與發火方式`,
+    saturn && `${saturn.label}在${saturn.sign}：你容易對自己設下規矩、壓力或責任的地方`,
+  ].filter(Boolean).join("。");
+  const interaction = contrast
+    ? `這五顆並不是各說各話。${contrast.first.label}與${contrast.second.label}呈現不同方向時，你可能很熟悉這種感覺：「我知道應該這樣做，可是每天真的過起來，我就是會往另一邊走。」這正是習慣比單一性格描述更複雜的地方。`
+    : "這些位置若彼此方向相近，某些生活習慣會特別穩定，甚至成為別人很容易認出你的日常模式。";
+  return `生活習慣不是只看一顆星。\n\n${parts}。\n\n${interaction}`;
+}
