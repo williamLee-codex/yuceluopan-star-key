@@ -576,6 +576,7 @@ export default function Home() {
   const loveForecast   = getLoveForecast(birthday.year, birthday.month, birthday.day);
   const wealthForecast = getWealthForecast(birthday.year, birthday.month, birthday.day);
   const soulmateCategories = getSoulmateCategories();
+  const relationshipEvidenceDomain: Record<SoulmateCategory, PaidReadingDomain> = { partner: "partner", boss: "boss", colleague: "colleague", friend: "friend" };
   const mercury        = getMercuryRetrogradeStatus();
   const destinyReport = hasExactPlanets ? getBirthdayDestinyReport(birthday.year,birthday.month,birthday.day,birthday.hour,birthday.minute,{sun:facts.signs.sun!,moon:facts.signs.moon!}) : {sunText:'出生資料未完整確認，暫時無法提供太陽星座解讀。',moonText:'月亮可能跨越兩個星座，請先看本命星盤列出的可能範圍。',...getDateDestinyReport(birthday.year,birthday.month,birthday.day)};
 
@@ -1034,6 +1035,7 @@ export default function Home() {
                         const mKey  = SOULMATE_PRICING_KEYS[key];
                         const dLabel = SOULMATE_LABELS[key] || key;
                         const sm    = getSoulmateProfile(birthday.month, birthday.day, key as SoulmateCategory);
+                        const evidenceSummary = hasExactPlanets ? buildEvidenceSummary(facts, relationshipEvidenceDomain[key as SoulmateCategory]) : "";
                         const isU   = !!unlockedModules[mKey];
                         return (
                           <div key={key} style={{ background: "#0a0a0a", border: "1px solid rgba(212,175,55,0.22)", borderRadius: 14, overflow: "hidden" }}>
@@ -1056,6 +1058,12 @@ export default function Home() {
                                 blurPreview={<p style={{ fontSize: 15, color: "#FFF", lineHeight: 1.8 }}>{sm.analysis.replace(/\{\{NAME\}\}/g, nick).substring(0, 30)}……</p>}>
                                 <div>
                                   <BodyText style={{ fontSize: 16 }}>{renderNick(sm.analysis, nick)}</BodyText>
+                                  {evidenceSummary && (
+                                    <div style={{ marginTop: 14, padding: "12px 14px", borderLeft: "2px solid rgba(212,175,55,0.55)", background: "rgba(212,175,55,0.045)", borderRadius: 8 }}>
+                                      <div style={{ color: "#D4AF37", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>你的本命盤為什麼會這樣表現</div>
+                                      <BodyText style={{ fontSize: 15 }}>{evidenceSummary}</BodyText>
+                                    </div>
+                                  )}
                                 </div>
                               </MiniLockedSection>
                             </div>
