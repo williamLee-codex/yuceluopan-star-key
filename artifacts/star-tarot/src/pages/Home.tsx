@@ -1035,7 +1035,7 @@ export default function Home() {
                         const mKey  = SOULMATE_PRICING_KEYS[key];
                         const dLabel = SOULMATE_LABELS[key] || key;
                         const sm    = getSoulmateProfile(birthday.month, birthday.day, key as SoulmateCategory);
-                        const evidenceSummary = hasExactPlanets ? buildEvidenceSummary(facts, relationshipEvidenceDomain[key as SoulmateCategory]) : "";
+                        const relationshipReading = hasExactPlanets ? buildRelationshipReading(facts, relationshipEvidenceDomain[key as SoulmateCategory] as "partner" | "boss" | "colleague" | "friend", sm.analysis) : sm.analysis;
                         const isU   = !!unlockedModules[mKey];
                         return (
                           <div key={key} style={{ background: "#0a0a0a", border: "1px solid rgba(212,175,55,0.22)", borderRadius: 14, overflow: "hidden" }}>
@@ -1057,13 +1057,7 @@ export default function Home() {
                                 isUnlocked={isU} onRequest={requestUnlock}
                                 blurPreview={<p style={{ fontSize: 15, color: "#FFF", lineHeight: 1.8 }}>{sm.analysis.replace(/\{\{NAME\}\}/g, nick).substring(0, 30)}……</p>}>
                                 <div>
-                                  <BodyText style={{ fontSize: 16 }}>{renderNick(sm.analysis, nick)}</BodyText>
-                                  {evidenceSummary && (
-                                    <div style={{ marginTop: 14, padding: "12px 14px", borderLeft: "2px solid rgba(212,175,55,0.55)", background: "rgba(212,175,55,0.045)", borderRadius: 8 }}>
-                                      <div style={{ color: "#D4AF37", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>你的本命盤為什麼會這樣表現</div>
-                                      <BodyText style={{ fontSize: 15 }}>{evidenceSummary}</BodyText>
-                                    </div>
-                                  )}
+                                  <BodyText style={{ fontSize: 16, whiteSpace: "pre-line" }}>{renderNick(relationshipReading, nick)}</BodyText>
                                 </div>
                               </MiniLockedSection>
                             </div>
