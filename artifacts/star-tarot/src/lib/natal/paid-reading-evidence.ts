@@ -88,3 +88,43 @@ export function buildEvidenceSummary(facts: ReadingFacts, domain: PaidReadingDom
   }
   return `${basis}。這些位置分別描述不同層面的反應，不能只用太陽星座替代整張星盤。`;
 }
+
+
+const SCENE: Record<Exclude<PaidReadingDomain, "decision" | "habits" | "premium">, string> = {
+  partner: "關係靠近時，你可能一邊很在意對方的回應，一邊又有自己的節奏。真正起衝突時，表面上的一句話，常常同時碰到親密需要與自我保護。",
+  boss: "面對主管交辦或評價時，你表面怎麼回應，和心裡真正承受的壓力不一定相同。尤其在權責不清或被催促時，這種差異更容易出現。",
+  colleague: "合作最容易看出你的溝通、行動與責任感是不是走在同一個方向。事情順利時不明顯，一到趕期限或意見不同，就會浮出來。",
+  friend: "朋友相處看似輕鬆，但真正決定你會不會靠近一個人的，往往是安心感、說話方式與彼此保留多少空間。",
+};
+
+export function buildRelationshipReading(
+  facts: ReadingFacts,
+  domain: "partner" | "boss" | "colleague" | "friend",
+  legacyText = "",
+): string {
+  const evidence = selectPaidReadingEvidence(facts, domain);
+  if (!evidence.length) return legacyText;
+  const tensions = findEvidenceTensions(evidence);
+  const contrast = tensions.find((x) => x.kind === "contrasting");
+  const reinforce = tensions.find((x) => x.kind === "reinforcing");
+  const primary = evidence.slice(0, 3);
+  const cause = primary.map((x) => `${x.label}在${x.sign}主要牽動${x.role}`).join("；");
+
+  let interaction = "";
+  if (contrast) {
+    interaction = `這裡最值得注意的是${contrast.first.label}與${contrast.second.label}沒有走同一種反應路線。你可能會有「我明明在意，為什麼真的遇到事情時卻不是照心裡想的方式反應？」的時刻。這不是反覆無常，而是${contrast.first.role}與${contrast.second.role}同時在拉你。`;
+  } else if (reinforce) {
+    interaction = `${reinforce.first.label}與${reinforce.second.label}的傾向較一致，因此你在這類關係裡的反應通常比較直接：心裡在意的事，也較容易變成實際的說話或行動方式。`;
+  } else {
+    interaction = "這幾個位置各管不同層面，所以不能只用太陽星座判斷你的相處方式；真正的你，是這些反應疊在一起之後的結果。";
+  }
+
+  const usefulLegacy = legacyText
+    .replace(/^[^，。]+的\{\{NAME\}\}[，,]?/, "")
+    .split("。")
+    .filter((sentence) => sentence && !sentence.includes("下列星座") && !sentence.includes("星座提供"))
+    .slice(-2)
+    .join("。");
+
+  return `${SCENE[domain]}\n\n為什麼你會這樣？${cause}。\n\n${interaction}${usefulLegacy ? `\n\n放回日常相處：${usefulLegacy}。` : ""}`;
+}
