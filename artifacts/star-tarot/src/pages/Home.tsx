@@ -577,6 +577,8 @@ export default function Home() {
   const wealthForecast = getWealthForecast(birthday.year, birthday.month, birthday.day);
   const soulmateCategories = getSoulmateCategories();
   const relationshipEvidenceDomain: Record<SoulmateCategory, PaidReadingDomain> = { partner: "partner", boss: "boss", colleague: "colleague", friend: "friend" };
+  const decisionReading = hasExactPlanets ? buildDecisionReading(facts) : "";
+  const habitReading = hasExactPlanets ? buildHabitReading(facts) : "";
   const mercury        = getMercuryRetrogradeStatus();
   const destinyReport = hasExactPlanets ? getBirthdayDestinyReport(birthday.year,birthday.month,birthday.day,birthday.hour,birthday.minute,{sun:facts.signs.sun!,moon:facts.signs.moon!}) : {sunText:'出生資料未完整確認，暫時無法提供太陽星座解讀。',moonText:'月亮可能跨越兩個星座，請先看本命星盤列出的可能範圍。',...getDateDestinyReport(birthday.year,birthday.month,birthday.day)};
 
@@ -711,10 +713,7 @@ export default function Home() {
                         blurPreview={<p style={{ fontSize: 16, color: "#FFF", lineHeight: 1.8 }}>從太陽與月亮，看看你想追求的目標和真正需要的安心感。這能幫助 <span style={{ color: "#D4AF37", fontWeight: 700 }}>{nick}</span> 更清楚地理解自己……</p>}>
                         <div>
                           <div style={{ fontSize: 13, color: "#C9A84C", marginBottom: 14 }}>✦ 太陽、月亮與上升解析已解鎖 ✦</div>
-                          <div
-                            style={{ fontFamily: "'Noto Serif SC',serif" }}
-                            dangerouslySetInnerHTML={{ __html: renderNickHtml(tripleSign.deepProfile, nick) }}
-                          />
+                          <BodyText style={{ fontSize: 16, whiteSpace: "pre-line" }}>{decisionReading || renderNick(tripleSign.basicDescription, nick)}</BodyText>
                         </div>
                       </MiniLockedSection>
                     </div>
@@ -736,7 +735,7 @@ export default function Home() {
                       </button>
                     )}
                     {!!unlockedModules.allFivePlanets && (
-                      <div style={{ marginBottom: 12, textAlign: "center", fontSize: 12, color: "rgba(74,255,140,0.7)", border: "1px solid rgba(74,255,140,0.25)", borderRadius: 100, padding: "4px 0" }}>✦ 五顆行星解析已解鎖 ✦</div>
+                      <><div style={{ marginBottom: 12, textAlign: "center", fontSize: 12, color: "rgba(74,255,140,0.7)", border: "1px solid rgba(74,255,140,0.25)", borderRadius: 100, padding: "4px 0" }}>✦ 五顆行星解析已解鎖 ✦</div><div style={{ marginBottom: 14, padding: "14px 16px", background: "rgba(212,175,55,0.045)", border: "1px solid rgba(212,175,55,0.16)", borderRadius: 12 }}><div style={{ color: "#D4AF37", fontWeight: 700, fontSize: 14, marginBottom: 8 }}>五顆行星放在一起看</div><BodyText style={{ fontSize: 15, whiteSpace: "pre-line" }}>{habitReading}</BodyText></div></>
                     )}
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       {planets.map((p) => (
